@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.llm-training-learning-os.invalid/schemas/run_manifest.schema.json",
+  "title": "Training Run Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "created_at",
+    "environment_scope",
+    "code_id",
+    "data_id",
+    "config_id",
+    "seed",
+    "world_size",
+    "precision",
+    "global_batch",
+    "max_steps",
+    "status",
+    "privacy"
+  ],
+  "properties": {
+    "run_id": { "type": "string", "minLength": 3 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "environment_scope": {
+      "type": "string",
+      "enum": ["PERSONAL_5070TI", "COMPANY_V100_INTERNAL", "RENTED_H100", "CPU_ONLY"]
+    },
+    "code_id": { "type": "string", "description": "Commit/hash or an internal opaque ID." },
+    "data_id": { "type": "string", "description": "Public hash or an internal opaque ID; no company path." },
+    "config_id": { "type": "string" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "world_size": { "type": "integer", "minimum": 1 },
+    "precision": { "type": "string", "enum": ["fp32", "fp16", "bf16"] },
+    "micro_batch_per_rank": { "type": "integer", "minimum": 1 },
+    "gradient_accumulation_steps": { "type": "integer", "minimum": 1 },
+    "global_batch": { "type": "integer", "minimum": 1 },
+    "max_steps": { "type": "integer", "minimum": 1 },
+    "resume_from": { "type": ["string", "null"] },
+    "hypothesis": { "type": "string" },
+    "controlled_variables": { "type": "array", "items": { "type": "string" } },
+    "primary_metric": { "type": "string" },
+    "stop_conditions": { "type": "array", "items": { "type": "string" } },
+    "status": {
+      "type": "string",
+      "enum": ["PLANNED", "RUNNING", "PASS", "FAIL-MODEL", "FAIL-SYSTEM", "INCONCLUSIVE"]
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["company_internal", "export_allowed", "contains_sensitive_paths"],
+      "properties": {
+        "company_internal": { "type": "boolean" },
+        "export_allowed": { "type": "boolean" },
+        "contains_sensitive_paths": { "const": false }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "environment_scope": { "const": "COMPANY_V100_INTERNAL" } },
+        "required": ["environment_scope"]
+      },
+      "then": {
+        "properties": {
+          "privacy": {
+            "properties": {
+              "company_internal": { "const": true },
+              "export_allowed": { "const": false }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
