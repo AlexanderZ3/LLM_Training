@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# lab 运行产物：日志、checkpoint、探针输出、下载的数据集
+outputs/**/lab/runs/
+outputs/**/lab/**/dataset/
+*.pth
+*.pt
+*.safetensors

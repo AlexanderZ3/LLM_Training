@@ -1,0 +1,31 @@
+# Week M02 lab 依赖。两段分别对应两台机器，不要混用。
+
+# ---------------------------------------------------------------------------
+# 公司 V100 (torch 2.1.0, 不改动)
+# ---------------------------------------------------------------------------
+# 这一段是**声明**，不是安装清单。公司环境已有 Conda + PyTorch 2.1.0，
+# 本周不新建虚拟环境、不升级 torch、不 pip install 任何东西。
+# 先跑 scripts/probe_company.py 与 scripts/audit_minimind_compat.py 确认下列条件，
+# 缺哪一项就在任务卡上记为阻塞，而不是就地安装。
+#
+#   torch==2.1.0            # 已在公司环境中；本 lab 只调用 2.1 已有的 API
+#   transformers>=4.30      # MiniMind 的 PretrainedConfig / PreTrainedModel / ACT2FN
+#   numpy>=1.24             # common.set_seed 用
+#   datasets                # 仅 --dataset real 需要（走 MiniMind 的 lm_dataset.py）；
+#                           # 没有 datasets 时用 --dataset tiny，功能不受影响
+#
+# 需要注意的是：MiniMind @7a6fddd 的 requirements.txt 指定的 transformers 版本
+# 可能高于公司环境已有的版本。审计报告（audit_minimind_compat.py 的输出）会列出
+# 具体冲突；本 lab 自身只依赖 transformers 的四个符号，通常不需要升级。
+
+# ---------------------------------------------------------------------------
+# 本机 CPU 验证
+# ---------------------------------------------------------------------------
+# conda 环境 ResearchAgentPy310（Python 3.10）。安装 CPU 版 torch：
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# 下面是本机实测通过的版本组合（2026-09-05）：
+torch==2.14.0
+transformers==4.57.6
+numpy==2.2.6
+pytest==9.1.1
+datasets==3.6.0

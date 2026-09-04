@@ -1,0 +1,64 @@
+# Week M01 lab 依赖。本 lab 不复制 MiniMind 源码，只通过 MINIMIND_ROOT 引用固定 commit
+# 7a6fddd63a30c06b2fdd5fac4089922b29bc841b 的克隆。下面两段是两条互不干扰的安装路径，按机器选一段。
+
+# =============================================================================
+# 个人 5070 Ti (Blackwell sm_120)  —— 有界训练主线，Day 0-5 的 GPU 步骤都在这台机器上跑
+# =============================================================================
+# RTX 5070 Ti 的 compute capability 是 12.0（sm_120）。PyPI 默认的 torch wheel（cu126 及更早）
+# 编译产物里没有 sm_120 kernel，装上后 torch.cuda.is_available() 会返回 True，但第一次真正做
+# CUDA 矩阵乘时报 "CUDA error: no kernel image is available for execution on the device"。
+# 判据：lab/scripts/probe_env.py 输出里 compute_capability == "12.0" 且 arch_list 不含 "sm_120"。
+# 因此必须从 cu128 索引装 torch >= 2.7（不能用 `pip install torch` 的默认源）：
+#
+#   pip install --index-url https://download.pytorch.org/whl/cu128 "torch>=2.7"
+#
+# 装完立刻复验（两条都要满足，缺一条就是环境没配好）：
+#   python -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.get_arch_list())"
+#     -> 版本号带 +cu128，且 arch_list 里出现 'sm_120'
+#   python lab/scripts/probe_env.py --skip-hash
+#     -> cuda_matmul_ok = true，warnings 里没有 sm_120 相关条目
+#
+# MiniMind 侧的依赖版本抄自 $MINIMIND_ROOT/requirements.txt（固定 commit 内已核验）。
+# 注意该文件把 torch 注释成 `# torch==2.6.0`：2.6.0 没有 sm_120 kernel，5070 Ti 上以上面的
+# cu128 wheel 为准，不要按注释装 2.6.0。
+transformers==4.57.6
+datasets==3.6.0
+# datasets 必须在 import torch 之前 import：Windows 上 pyarrow 与 torch 的 DLL 会冲突
+# （MiniMind issue #771）。lab/src/mm_probe/bounded_train.py 与 MiniMind trainer/*.py 都已按此顺序写。
+numpy==1.26.4
+tokenizers==0.22.2
+huggingface_hub>=0.36.2         # setup_minimind.* 用 hf_hub_download 拉 4 个 jsonl
+jinja2==3.1.2                   # apply_chat_template 渲染 chat 模板
+matplotlib==3.10.0              # parse_log.py --png；缺失时自动降级为 ASCII sparkline，不报错
+pytest>=8.0                     # lab/tests
+#
+# Day 5 GRPO 的 reward 模型 internlm/internlm2-1_8b-reward 需要 trust_remote_code，
+# 其 safetensors 约 3.4 GB。16 GB 显存放不下时不装它，改用 lab/scripts/patch_grpo_rule_reward.py
+# 生成的规则 reward（见 lab/README.md 已知限制与 02_LAB_GUIDE.md 第 5 节）。
+
+# =============================================================================
+# 本机 CPU（课程构建与单测）—— 只跑 pytest、py_compile、tiny_cpu 配置的 dry run，不做任何有界训练
+# =============================================================================
+# 本机环境：conda env ResearchAgentPy310，解释器
+#   D:/Software/Large/Anconda/envs/ResearchAgentPy310/python.exe
+# 以下版本是 2026-09-04 在该环境实测到的已装版本（`python -c "import torch; print(torch.__version__)"` 等），
+# 不是建议值。这条路径不需要 CUDA：torch 是 +cpu 构建，torch.cuda.get_arch_list() 返回空列表 []，
+# probe_env.py 会把所有 GPU 字段填 null 并仍以退出码 0 结束。
+#
+#   python==3.10.20
+#   torch==2.14.0+cpu
+#   transformers==4.57.6
+#   datasets==3.6.0
+#   tokenizers==0.22.2
+#   huggingface_hub==0.36.2
+#   numpy==2.2.6
+#   pandas==2.3.3
+#   matplotlib==3.10.9
+#   pytest==9.1.1
+#   PyYAML==6.0.3
+#   tqdm==4.68.1
+#
+# 这些版本与上面 5070 Ti 段并不完全一致（numpy 2.2.6 vs 1.26.4，pytest 9.1.1 vs >=8.0）。
+# 已在本机确认：lab/tests 的 42 条测试在 numpy 2.2.6 + torch 2.14.0+cpu 下全部通过，
+# 所以本机不需要为了对齐 MiniMind 的 numpy==1.26.4 而降级。5070 Ti 机器上跑 MiniMind 原
+# trainer/*.py 时才需要按上面那段对齐。

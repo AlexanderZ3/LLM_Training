@@ -6,6 +6,8 @@
 处理 00_INPUT.md 顶部最新输入需求块。
 ```
 
+路由说明：本仓库有两套独立的智能体系统。`AGENT: codex` 由 Codex 按 `AGENTS.md` 处理；`AGENT: cc` 由 Claude Code 按 `CLAUDE.md` 处理（命令 `/cc-input`）；`AGENT: both` 两边各自处理并各自归档。缺省为 `codex`。归档标题以 `[codex]` / `[cc]` 标明处理方。
+
 ### 新需求填写区
 
 ```text
@@ -13,6 +15,7 @@
 TYPE: TASK
 DEPTH: AUTO
 MODE: COACH
+AGENT: codex
 
 <!-- 在这里填写下一条需求 -->
 <!-- VOICE_ROUTER:INPUT:END -->
@@ -21,6 +24,28 @@ MODE: COACH
 ---
 
 ## 2. 历史归档区
+
+### 2026-09-05 [cc] - conda 环境 + MiniMind 两周课程
+
+- 处理状态：已完成。
+- 需求 1：本机 Python 统一走 conda 环境 `ResearchAgentPy310`，规则写入 `CLAUDE.md` 3.1 节，入口 `.claude/scripts/cc_py.ps1`，已装 CPU 版 torch 与 pytest。
+- 需求 2：新建轨道 `outputs/1_cc_coaching/track_minimind/`，两个周包共 103 个文件、1.3 MB。M01 单机 5070 Ti 全链路，M02 公司八卡 V100 分布式。两周结构校验 `PASS`；M01 测试 42 通过，M02 测试 73 通过 1 跳过。
+- 详情见 `01_PROGRESS.md` 的 2026-09-05 [cc] 记录。
+
+原始输入：
+
+```text
+TYPE: TASK
+DEPTH: AUTO
+MODE: COACH
+AGENT: claude  code
+
+1. 以后使用python就用conda环境ResearchAgentPy310
+路径是   D:\Software\Large\Anconda\envs\ResearchAgentPy310
+
+2. 根据D:\zz\00_RealProjects\0_LLM_Training\input_info\minimind_5070ti_v100.md
+文档，打造两周课程，一个给单机5070ti的训练， 第二周上八卡V100
+```
 
 ### 2026-09-03 - 14 周 LLM 训练教程与陪跑教练
 

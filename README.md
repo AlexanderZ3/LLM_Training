@@ -21,6 +21,22 @@
 详细手册发布门：[`outputs/0_basic_training/00_MANUAL_ACCEPTANCE_STANDARD.md`](outputs/0_basic_training/00_MANUAL_ACCEPTANCE_STANDARD.md)
 质量审查报告：[`outputs/02_2026-09-03_详细教程质量审查报告.md`](outputs/02_2026-09-03_详细教程质量审查报告.md)
 
+## 两套智能体系统
+
+本仓库自 2026-09-04 起并行运行两套相互独立的陪跑教练系统。它们不共用契约、agent、skill/workflow、schema、脚本或记忆；只共享输入入口、进度日志、来源资料和输出根目录。
+
+| | Codex | Claude Code（cc） |
+| --- | --- | --- |
+| 契约 | `AGENTS.md` | `CLAUDE.md` |
+| 智能体 | `.codex/agents/*.toml` | `.claude/agents/*.md` |
+| 流程 | `workflows/` | `.claude/skills/`（`/cc-*` 命令） |
+| schema / 脚本 | `schemas/`、`scripts/` | `.claude/schemas/`、`.claude/scripts/` |
+| 记忆 | `memory/*.md` | `memory/cc/` |
+| 交付 | `outputs/0_basic_training/`、`outputs/0N_*.md` | `outputs/1_cc_coaching/` |
+| 交付单位 | 周教程文档 | 可执行的一天：任务卡 + `lab/` 代码 + 证据字段 |
+
+共享规则：`00_INPUT.md` 用 `AGENT: codex | cc | both` 路由；`01_PROGRESS.md` 的记录标题带 `[codex]` 或 `[cc]`；`input_info/` 对两边都只读；任何一方不修改对方目录。cc 系统的说明见 [`.claude/README.md`](.claude/README.md)。
+
 ## 14 周地图
 
 | 周 | 主线 | 本周必须拥有的能力 |

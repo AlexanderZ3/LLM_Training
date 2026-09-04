@@ -1,0 +1,35 @@
+[2026-09-05 01:19:46] ==============================================================================
+[2026-09-05 01:19:46] MiniMind 数据下载器  tier=all  目标=D:\zz\00_RealProjects\0_LLM_Training\outputs\1_cc_coaching\track_minimind\week01_minimind_5070ti\datasets
+[2026-09-05 01:19:46] 数据集 jingyaogong/minimind_dataset @ 312afb4f7639  (apache-2.0 + cc-by-nc-2.0)
+[2026-09-05 01:19:46] 奖励模型 internlm/internlm2-1_8b-reward @ 25f3593492ab  (license: other)
+[2026-09-05 01:19:46] 端点 HF_ENDPOINT=https://huggingface.co (默认)
+[2026-09-05 01:19:46] 共 22 个文件，合计 27.00 GB
+[2026-09-05 01:19:46] ==============================================================================
+[2026-09-05 01:19:46] 已就绪 0 B，还需下载约 27.00 GB
+[2026-09-05 01:19:46] 目标盘可用 51.45 GB
+[2026-09-05 01:19:46] 
+[2026-09-05 01:19:46] 层                    字节  状态      文件 / 用途
+[2026-09-05 01:19:46] reward              809  待下载     internlm2_1_8b_reward/special_tokens_map.json  — 特殊 token 映射
+[2026-09-05 01:19:46] reward              813  待下载     internlm2_1_8b_reward/config.json  — 模型配置
+[2026-09-05 01:19:46] reward            2,950  待下载     internlm2_1_8b_reward/tokenizer_config.json  — tokenizer 配置
+[2026-09-05 01:19:46] reward            7,805  待下载     internlm2_1_8b_reward/tokenization_internlm2_fast.py  — remote code：fast tokenizer
+[2026-09-05 01:19:46] reward            8,806  待下载     internlm2_1_8b_reward/tokenization_internlm2.py  — remote code：tokenizer
+[2026-09-05 01:19:46] reward            9,042  待下载     internlm2_1_8b_reward/configuration_internlm2.py  — remote code：配置类
+[2026-09-05 01:19:46] reward           13,682  待下载     internlm2_1_8b_reward/model.safetensors.index.json  — 分片索引
+[2026-09-05 01:19:46] full             22,789  待下载     minimind_dataset/lora_identity.jsonl  — LoRA 身份认知（极小，验证 LoRA 链路最快）
+[2026-09-05 01:19:46] reward           91,364  待下载     internlm2_1_8b_reward/modeling_internlm2.py  — remote code：模型实现
+[2026-09-05 01:19:46] reward        1,477,754  待下载     internlm2_1_8b_reward/tokenizer.model  — SentencePiece 词表
+[2026-09-05 01:19:46] full         18,372,683  待下载     minimind_dataset/agent_rl_math.jsonl  — Agentic RL 数学子集
+[2026-09-05 01:19:46] mini         23,754,740  待下载     minimind_dataset/rlaif.jsonl  — Day 5 GRPO 的 prompt 来源
+[2026-09-05 01:19:46] full         24,650,716  待下载     minimind_dataset/lora_exam.jsonl  — LoRA 考试领域
+[2026-09-05 01:19:46] full         34,002,385  待下载     minimind_dataset/lora_medical.jsonl  — LoRA 医疗领域（Day 3 可选扩展）
+[2026-09-05 01:19:46] mini         53,653,322  待下载     minimind_dataset/dpo.jsonl  — Day 4 偏好对（chosen/rejected）
+[2026-09-05 01:19:46] full         82,036,930  待下载     minimind_dataset/agent_rl.jsonl  — Agentic RL 轨迹（多轮工具调用）
+[2026-09-05 01:19:46] mini      1,241,043,656  待下载     minimind_dataset/pretrain_t2t_mini.jsonl  — Day 2 预训练主数据（{"text"}）
+[2026-09-05 01:19:46] reward    1,417,790,344  待下载     internlm2_1_8b_reward/model-00002-of-00002.safetensors  — 奖励模型权重 2/2
+[2026-09-05 01:19:46] mini      1,739,201,170  待下载     minimind_dataset/sft_t2t_mini.jsonl  — Day 1/3 SFT 主数据（conversations）
+[2026-09-05 01:19:46] reward    1,981,392,544  待下载     internlm2_1_8b_reward/model-00001-of-00002.safetensors  — 奖励模型权重 1/2
+[2026-09-05 01:19:46] full      8,275,074,893  待下载     minimind_dataset/pretrain_t2t.jsonl  — 全量预训练（mini 的超集，跑长训练才需要）
+[2026-09-05 01:19:46] full     14,096,018,369  待下载     minimind_dataset/sft_t2t.jsonl  — 全量 SFT（mini 的超集）
+[2026-09-05 01:19:46] 
+[2026-09-05 01:19:46] --dry-run：到此为止，未下载任何内容。

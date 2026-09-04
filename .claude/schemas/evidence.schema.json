@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cc-evidence-v1",
+  "title": "cc coaching evidence entry",
+  "description": "One evidence record produced by the learner after a task card, an oral gate, or a debugging session. Must not contain company-sensitive raw artifacts.",
+  "type": "object",
+  "required": [
+    "date", "week", "day", "card", "skill", "env", "ai_level",
+    "primary_artifact", "status", "failure_class", "time_spent_min"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "week": { "type": "integer", "minimum": 1, "maximum": 14 },
+    "day": { "type": "integer", "minimum": 0, "maximum": 6 },
+    "card": { "type": "string", "description": "day0..day5, oral_gate, regression, or free" },
+    "skill": { "type": "string", "description": "short skill tag, e.g. bpe_roundtrip, causal_mask, amp_scaler, ddp_equivalence" },
+    "env": { "type": "string", "enum": ["cpu", "5070ti", "v100", "h100", "other"] },
+    "ai_level": { "type": "string", "enum": ["A0", "A1", "A2", "A3", "A4"] },
+    "ai_level_disputed": { "type": "boolean", "description": "true when the coach believes the self-reported level is inconsistent with the evidence" },
+    "config_id": { "type": "string", "description": "non-sensitive identifier of config/data/code version" },
+    "primary_artifact": { "type": "string", "description": "path, test name, or one-line description of the day's single main artifact" },
+    "observations": {
+      "type": "object",
+      "description": "key numeric or textual observations; abstract values only when produced on company hardware",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "status": { "type": "string", "enum": ["PASS", "FAIL-MODEL", "FAIL-SYSTEM", "INCONCLUSIVE", "BLOCKED"] },
+    "failure_class": { "type": "string", "enum": ["none", "measurement", "data_contract", "numeric", "system", "model", "insufficient", "env", "license"] },
+    "kade": {
+      "type": "object",
+      "description": "coach observations per dimension; free text, no numeric score before baseline",
+      "properties": {
+        "K": { "type": "string" },
+        "A": { "type": "string" },
+        "D": { "type": "string" },
+        "E": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "oral_scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "score"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^W\\d{2}-[READPT]-\\d{2}$" },
+          "score": { "type": "integer", "minimum": 0, "maximum": 4 },
+          "retry_score": { "type": "integer", "minimum": 0, "maximum": 4 },
+          "note": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "self_check": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "enum": ["能", "不能", "yes", "no"] }
+    },
+    "time_spent_min": { "type": "integer", "minimum": 0 },
+    "regression_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "regression_task": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}

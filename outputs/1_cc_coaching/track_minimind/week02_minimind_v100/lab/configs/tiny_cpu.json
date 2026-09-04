@@ -1,0 +1,29 @@
+{
+  "name": "tiny_cpu",
+  "purpose": "本机 CPU / gloo 2 进程逻辑验证用的最小 dense 模型（约 0.6M 参数）",
+  "model": {
+    "hidden_size": 64,
+    "num_hidden_layers": 2,
+    "use_moe": false,
+    "num_attention_heads": 2,
+    "num_key_value_heads": 1,
+    "vocab_size": 6400,
+    "intermediate_size": 128,
+    "moe_intermediate_size": 128,
+    "max_position_embeddings": 512,
+    "num_experts": 4,
+    "num_experts_per_tok": 1,
+    "router_aux_loss_coef": 0.0005,
+    "dropout": 0.0,
+    "flash_attn": true,
+    "tie_word_embeddings": true
+  },
+  "train": {
+    "seq_len": 64,
+    "global_batch": 8,
+    "accum": 4,
+    "lr": 0.001,
+    "grad_clip": 1.0,
+    "data_seed": 1234
+  }
+}
