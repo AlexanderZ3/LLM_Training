@@ -4,9 +4,13 @@ __pycache__/
 .mypy_cache/
 .ipynb_checkpoints/
 
-# lab 运行产物：日志、checkpoint、探针输出、下载的数据集
+# lab 运行产物：日志、checkpoint、探针输出
 outputs/**/lab/runs/
 outputs/**/lab/**/dataset/
+
+# 下载的数据集与模型权重（27 GB，不入版本控制）
+outputs/**/datasets/
 *.pth
 *.pt
 *.safetensors
+*.jsonl

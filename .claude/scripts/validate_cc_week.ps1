@@ -168,7 +168,11 @@ foreach ($f in $pyFiles) {
                 }
             }
         }
-        if ($l -match "NotImplementedError|TODO|FIXME") { Add-Err "$rel`:$($i+1) : placeholder '$($l.Trim())'" }
+        # -cmatch: case-sensitive. PowerShell's -match is case-insensitive, which
+        # would flag ordinary identifiers such as a variable named 'todo'.
+        if ($l -cmatch "\bNotImplementedError\b|\bTODO\b|\bFIXME\b|\bXXX\b") {
+            Add-Err "$rel`:$($i+1) : placeholder '$($l.Trim())'"
+        }
         if ($l -match "^\s*\.\.\.\s*$") { Add-Err "$rel`:$($i+1) : ellipsis placeholder" }
     }
 }

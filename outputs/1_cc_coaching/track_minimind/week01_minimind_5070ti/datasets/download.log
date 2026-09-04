@@ -33,3 +33,37 @@
 [2026-09-05 01:19:46] full     14,096,018,369  待下载     minimind_dataset/sft_t2t.jsonl  — 全量 SFT（mini 的超集）
 [2026-09-05 01:19:46] 
 [2026-09-05 01:19:46] --dry-run：到此为止，未下载任何内容。
+[2026-09-05 01:21:32] ==============================================================================
+[2026-09-05 01:21:32] MiniMind 数据下载器  tier=mini  目标=D:\zz\00_RealProjects\0_LLM_Training\outputs\1_cc_coaching\track_minimind\week01_minimind_5070ti\datasets
+[2026-09-05 01:21:32] 数据集 jingyaogong/minimind_dataset @ 312afb4f7639  (apache-2.0 + cc-by-nc-2.0)
+[2026-09-05 01:21:32] 奖励模型 internlm/internlm2-1_8b-reward @ 25f3593492ab  (license: other)
+[2026-09-05 01:21:32] 端点 HF_ENDPOINT=https://huggingface.co (默认)
+[2026-09-05 01:21:32] 共 4 个文件，合计 2.85 GB
+[2026-09-05 01:21:32] ==============================================================================
+[2026-09-05 01:21:32] 已就绪 0 B，还需下载约 2.85 GB
+[2026-09-05 01:21:32] 目标盘可用 51.45 GB
+[2026-09-05 01:21:32] 
+[2026-09-05 01:21:32] 层                    字节  状态      文件 / 用途
+[2026-09-05 01:21:32] mini         23,754,740  待下载     minimind_dataset/rlaif.jsonl  — Day 5 GRPO 的 prompt 来源
+[2026-09-05 01:21:32] mini         53,653,322  待下载     minimind_dataset/dpo.jsonl  — Day 4 偏好对（chosen/rejected）
+[2026-09-05 01:21:32] mini      1,241,043,656  待下载     minimind_dataset/pretrain_t2t_mini.jsonl  — Day 2 预训练主数据（{"text"}）
+[2026-09-05 01:21:32] mini      1,739,201,170  待下载     minimind_dataset/sft_t2t_mini.jsonl  — Day 1/3 SFT 主数据（conversations）
+[2026-09-05 01:21:32] 
+[2026-09-05 01:21:32] --dry-run：到此为止，未下载任何内容。
+[2026-09-05 01:21:43] ==============================================================================
+[2026-09-05 01:21:43] MiniMind 数据下载器  tier=mini  目标=D:\zz\00_RealProjects\0_LLM_Training\outputs\1_cc_coaching\track_minimind\week01_minimind_5070ti\datasets
+[2026-09-05 01:21:43] 数据集 jingyaogong/minimind_dataset @ 312afb4f7639  (apache-2.0 + cc-by-nc-2.0)
+[2026-09-05 01:21:43] 奖励模型 internlm/internlm2-1_8b-reward @ 25f3593492ab  (license: other)
+[2026-09-05 01:21:43] 端点 HF_ENDPOINT=https://huggingface.co (默认)
+[2026-09-05 01:21:43] 共 4 个文件，合计 2.85 GB
+[2026-09-05 01:21:43] ==============================================================================
+[2026-09-05 01:21:43] 已就绪 0 B，还需下载约 2.85 GB
+[2026-09-05 01:21:43] 目标盘可用 51.45 GB
+[2026-09-05 01:21:43] 
+[2026-09-05 01:21:43] 层                    字节  状态      文件 / 用途
+[2026-09-05 01:21:43] mini         23,754,740  待下载     minimind_dataset/rlaif.jsonl  — Day 5 GRPO 的 prompt 来源
+[2026-09-05 01:21:43] mini         53,653,322  待下载     minimind_dataset/dpo.jsonl  — Day 4 偏好对（chosen/rejected）
+[2026-09-05 01:21:43] mini      1,241,043,656  待下载     minimind_dataset/pretrain_t2t_mini.jsonl  — Day 2 预训练主数据（{"text"}）
+[2026-09-05 01:21:43] mini      1,739,201,170  待下载     minimind_dataset/sft_t2t_mini.jsonl  — Day 1/3 SFT 主数据（conversations）
+[2026-09-05 01:21:43] 
+[2026-09-05 01:21:43] --dry-run：到此为止，未下载任何内容。
