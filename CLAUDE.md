@@ -57,29 +57,56 @@ cc 与 Codex 的核心差异在交付单位：**Codex 的交付单位是教程�
 
 已知环境（`用户自述待核验`）：公司 8× V100，既有 Conda + PyTorch 2.1.0；个人 RTX 5070 Ti 16 GB，完整权限；可选租用 4×/8× H100。V100 支持 FP16 Tensor Core，通常无原生 BF16；输入中“V100 不支持 FP16”按 BF16 笔误处理，真实能力以探针为准。
 
-### 3.1 本机（运行 cc 的 Windows 机器）Python 规则
+### 3.1 本机 Python 一律走 conda 环境 `ResearchAgentPy310`（强制）
 
-用户指令（2026-09-04）：**以后使用 Python 一律用 conda 环境。** 本机探针（`已确认`，2026-09-04）：
+用户指令（2026-09-04 下达，2026-09-05 再次确认并指定环境）：**本项目在本机用 Python，一律用 conda 环境 `ResearchAgentPy310`。**
+
+```text
+D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe
+```
+
+本机探针（`已确认`，2026-09-05）：
 
 | 项 | 值 |
 | --- | --- |
 | Anaconda 根目录 | `D:\Software\Large\Anconda`（conda 23.10.0） |
-| 项目环境（用户指定） | `ResearchAgentPy310` → `D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe`（Python 3.10） |
+| **唯一允许的解释器** | `D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe`（Python 3.10.20） |
+| 已装关键包 | torch 2.14.0+cpu、pytest 9.1.1、transformers 4.57.6、numpy 2.2.6、huggingface_hub 0.36.2、hf_xet、hf_transfer |
 | PATH 上的 `python` | Windows 商店占位入口，退出码 9009，**禁止使用** |
-| GPU | 本机无 NVIDIA GPU，`nvidia-smi` 不存在；本机只能做 CPU 单测、`py_compile`、dry run |
+| GPU | 本机无 NVIDIA GPU，`nvidia-smi` 不存在；只能做 CPU 单测、`py_compile`、dry run |
 
-执行方式：
+执行方式，三选一，都指向同一个解释器：
 
 ```powershell
-# 统一入口（默认 ResearchAgentPy310；用环境变量 CC_CONDA_ENV 临时切换）
+# 1) 统一入口（可用 CC_CONDA_ENV 临时切换环境）
 powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/cc_py.ps1 -m pytest lab/tests -q
-# 或直接调用解释器
+# 2) 直接调用绝对路径
 & "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" -m py_compile lab/src/pkg/model.py
+# 3) 在 conda terminal 里先激活再用
+conda activate ResearchAgentPy310
+python -m pytest lab/tests -q
 ```
 
-- 所有 agent 与 skill 在本机运行 Python 时必须走上述入口；不得用裸 `python`/`python3`。
-- 需要新包时在 `ResearchAgentPy310` 内 `pip install`（CPU 版 torch 用 `--index-url https://download.pytorch.org/whl/cpu`），并把版本写进周包 `lab/requirements.txt`；不改动公司环境。
+规则：
+
+- 所有 agent 与 skill 在本机运行 Python 时**必须**用上述之一；写死裸 `python`/`python3` 视为阻断问题。
+- **交付给用户的脚本要自己保证解释器正确**，不要依赖用户的当前环境。长脚本在入口处检测 `sys.executable`，不是这个环境就 `os.execv` 切过去（范例：`track_minimind/week01_minimind_5070ti/lab/scripts/download_datasets.py` 的 `ensure_conda_interpreter`）。
+- 需要新包时在该环境内 `pip install`（CPU 版 torch 用 `--index-url https://download.pytorch.org/whl/cpu`），并把版本写进对应周包的 `lab/requirements.txt`；不改动公司环境。
 - 本机结果只代表 CPU 路径；GPU 相关门（AMP、显存、多卡）仍待 5070 Ti 或公司机器。
+- 本机 `C:\Users\13289\AppData\Local\Temp\pytest-of-13289` 权限异常，跑 pytest 要加 `--basetemp=<可写目录>`。
+
+### 3.2 长流程用 Python 写，不要用 shell 包一层（2026-09-05 教训）
+
+交付给用户的多步骤流程（下载、批量处理、重试循环）**逻辑全部写在 Python 里**，shell 脚本最多做一件事：用对解释器调用那个 Python。
+
+原因是一次真实故障：数据下载器原本用 PowerShell 做重试循环，里面写了 `& $Python @args 2>&1 | Tee-Object`。Windows PowerShell 5.1 对**原生命令**用 `2>&1` 会把每一行标准错误包装成 `ErrorRecord`，脚本开头的 `$ErrorActionPreference = "Stop"` 于是被一条无害的 `huggingface_hub` 建议信息触发，整个 27 GB 下载在第 10 个文件处静默终止。同一份代码在 bash 下没问题，属于 PowerShell 特有语义。
+
+因此：
+
+- 不对原生命令用 `2>&1`；需要日志就让 Python 自己写文件（顺带避免控制台代码页把中文写成乱码）。
+- 不在包着原生命令的 PowerShell 脚本里设 `$ErrorActionPreference = "Stop"`，改为显式检查 `$LASTEXITCODE`。
+- 重试、循环、超时、编码、磁盘检查这些都放进 Python，跨平台且行为可预测。
+- shell 封装如果只剩"选解释器 + 调一次"，就该考虑删掉它，直接给用户那条 Python 命令。
 
 ## 4. 处理 `00_INPUT.md` 的协议
 

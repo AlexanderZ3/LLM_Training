@@ -6,20 +6,29 @@
 
 ## 0. 一句话
 
-在这个周目录下运行一条命令，整夜把 MiniMind 的全部数据集和 GRPO 用的奖励模型下到 `datasets/`，断线自动重试，中断后重跑同一条命令继续。
+在 conda 环境 `ResearchAgentPy310` 下跑一条 Python 命令，整夜把 MiniMind 的**全部数据集**（11 个 jsonl，23.62 GB）下到 `datasets/`，断线自动重试，中断后重跑同一条命令继续。
+
+默认**不含模型权重**。GRPO 用的 InternLM2 1.8B 奖励模型是可选项，要下得显式加 `--tier all`，理由见第 1 节。
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File lab\scripts\download_all.ps1
+cd d:\zz\00_RealProjects\0_LLM_Training\outputs\1_cc_coaching\track_minimind\week01_minimind_5070ti
+& "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" lab\scripts\download_datasets.py --overnight
 ```
 
-## 1. 你会下到什么（27.00 GB，22 个文件）
+或者直接双击这个周目录下的 **`下载数据集.bat`**，效果一样。
+
+脚本会自己确认解释器：即使你用别的 Python 启动它，它也会自动切换到 `ResearchAgentPy310` 再继续。在 conda terminal 里 `conda activate ResearchAgentPy310` 之后直接 `python lab/scripts/download_datasets.py --overnight` 同样可以。
+
+## 1. 你会下到什么（默认 23.62 GB，11 个文件）
 
 两个来源，各自锁定了版本号。下载器只从这两个固定版本取文件，不会因为上游更新而拿到不同内容。
 
-| 来源 | 仓库 | 锁定版本 | 体积 | 许可 |
-| --- | --- | --- | --- | --- |
-| 数据集 | `jingyaogong/minimind_dataset` | `312afb4f76391145c6902f765bb51691c09a12f5` | 23.62 GB（11 个 jsonl） | `apache-2.0` 与 `cc-by-nc-2.0` |
-| 奖励模型 | `internlm/internlm2-1_8b-reward` | `25f3593492ab4625ce00fce8c5e67802d6e702ca` | 3.17 GB（11 个文件） | 标注为 `other` |
+| 来源 | 仓库 | 锁定版本 | 体积 | 默认下载 | 许可 |
+| --- | --- | --- | --- | --- | --- |
+| 数据集 | `jingyaogong/minimind_dataset` | `312afb4f76391145c6902f765bb51691c09a12f5` | 23.62 GB（11 个 jsonl） | **是** | `apache-2.0` 与 `cc-by-nc-2.0` |
+| 奖励模型权重 | `internlm/internlm2-1_8b-reward` | `25f3593492ab4625ce00fce8c5e67802d6e702ca` | 3.17 GB（含 2 个 safetensors） | 否，需 `--tier all` | 标注为 `other` |
+
+**为什么奖励模型不在默认里**：它是**模型权重，不是数据集**。MiniMind 的 `train_grpo.py` 默认会加载它给回答打分，但 Week M01 Day 5 刻意不走这条路——16 GB 显存同时放策略模型、参考模型和这个 1.8B 模型有溢出风险，所以 Day 5 默认用 `lab/src/mm_probe/rule_reward.py` 的规则奖励。**按现在的课程设计，你不下它也能完整走完 Day 0 到 Day 5。** 它只是后面想换成模型打分时的升级路径。
 
 **许可提醒（必读）**：数据集卡片同时标了 `apache-2.0` 和 `cc-by-nc-2.0`，后者是**非商用**条款。自己学习和本地实验没问题；如果之后要把训练出的模型或衍生数据放进公开作品集、或用于任何商业场景，先自己去读一遍数据集卡片确认边界。奖励模型的许可标注是 `other`，用之前读它的模型卡。cc 不替你做许可判断。
 
@@ -59,54 +68,64 @@ Get-PSDrive D | Select-Object @{n='剩余GB';e={[math]::Round($_.Free/1GB,1)}}
 & "<你的python路径>" -m pip install huggingface_hub
 ```
 
-可选加速：装 `hf_transfer` 并设 `$env:HF_HUB_ENABLE_HF_TRANSFER="1"`，大文件下载会明显变快。不装也能跑。
+加速包 `hf_xet` 与 `hf_transfer` 已在本机环境装好（`已确认`，2026-09-05）。缺了只是慢一点，`huggingface_hub` 会打一条建议安装的提示——那是提示不是错误，脚本不会因此中断。5070 Ti 那台机器上建议一并装：
+
+```powershell
+& "<你的python路径>" -m pip install huggingface_hub hf_xet hf_transfer
+```
 
 **网络。** 直连 HuggingFace 在这台机器上实测可达（`已确认`，2026-09-05）。如果你的网络访问不畅，用镜像：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File lab\scripts\download_all.ps1 -Endpoint https://hf-mirror.com
+& "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" lab\scripts\download_datasets.py --overnight --endpoint https://hf-mirror.com
 ```
 
 镜像和官方源的文件字节数一致，下载器照样按字节数校验，走哪个源都不影响结果可信度。
 
 ## 3. 整夜下载怎么跑
 
-在周目录 `week01_minimind_5070ti/` 下执行。
+全部逻辑在一个 Python 脚本里：`lab/scripts/download_datasets.py`。没有 shell 编排，没有外层封装，重试和循环都在 Python 内部完成。
+
+先在周目录下打开 conda terminal 并激活环境，或者直接用绝对路径调解释器。下面的例子都用绝对路径，复制即可用。
 
 ### 先看一眼计划，不下载
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File lab\scripts\download_all.ps1 -DryRun
+& "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" lab\scripts\download_datasets.py --dry-run
 ```
 
-它会列出全部 22 个文件、每个的字节数和用途、当前状态、磁盘够不够。确认无误再正式跑。
+它会列出全部 22 个文件、每个的字节数和用途、当前状态、磁盘够不够、加速包有没有装。确认无误再正式跑。
 
 ### 正式跑（这就是整夜那条命令）
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File lab\scripts\download_all.ps1
+& "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" lab\scripts\download_datasets.py --overnight
 ```
+
+`--overnight` 做三件事：把重扫轮数提到 20，每轮之间等 60 秒，直到全部就绪或轮数用尽。
 
 行为：
 
 - 文件按体积**从小到大**下载。网络不稳时先把便宜的拿到手，最坏情况也只损失大文件的进度。
-- 单个文件失败最多重试 6 次，每次间隔递增到 60 秒。
-- 一轮结束后如果还有未完成的，等 60 秒再来一轮，最多 20 轮。整夜足够。
+- 单个文件失败最多重试 6 次，间隔递增到 60 秒。
+- 一轮结束后仍有未完成的就等 60 秒再来一轮，最多 20 轮。整夜足够。
 - 每个文件下完立刻按**精确字节数**校验，不匹配算失败并重试。
 - 全部完成后计算 sha256，写 `datasets/SHA256SUMS.txt` 和 `datasets/DOWNLOAD_MANIFEST.json`。
 
-日志两份：`datasets/download.log` 是累积的，`datasets/download_run_<时间戳>.log` 是本次的。第二天早上直接看日志末尾就知道结果。
+日志写在 `datasets/download.log`，由 Python 以 UTF-8 直接写入，不经过控制台，所以不会出现代码页导致的乱码。第二天早上看日志末尾就知道结果。
 
 ### 想让它在后台跑，关掉终端也不停
 
 ```powershell
-Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','lab\scripts\download_all.ps1' -WindowStyle Hidden
+Start-Process -FilePath "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" `
+  -ArgumentList 'lab\scripts\download_datasets.py','--overnight' `
+  -WorkingDirectory (Get-Location) -WindowStyle Hidden
 ```
 
-Git Bash 或 WSL 下：
+Git Bash 或 WSL：
 
 ```bash
-nohup bash lab/scripts/download_all.sh > /dev/null 2>&1 &
+nohup "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" lab/scripts/download_datasets.py --overnight > /dev/null 2>&1 &
 ```
 
 ### 只要 Week M01 主线用得到的（3.06 GB，十几分钟）
@@ -114,12 +133,27 @@ nohup bash lab/scripts/download_all.sh > /dev/null 2>&1 &
 如果你想今晚就开始 Day 1 而不是等全量：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File lab\scripts\download_all.ps1 -Tier mini
+& "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" lab\scripts\download_datasets.py --tier mini
 ```
 
 四个层级：`mini` 是 3.06 GB 的四个文件，`full` 是全部 11 个 jsonl（23.62 GB），`reward` 是奖励模型（3.17 GB），`all` 是前两者之和（27.00 GB，默认）。
 
-层级可以叠加着跑：先 `mini` 开工，白天再补 `all`。已经下好的文件不会重下。
+层级可以叠加着跑：先 `mini` 开工，白天再补 `--overnight`。已经下好的文件不会重下。
+
+### 常用参数
+
+| 参数 | 作用 |
+| --- | --- |
+| `--overnight` | 整夜模式：20 轮，轮间 60 秒 |
+| `--tier mini\|full\|reward\|all` | 选择下载层级，默认 `all` |
+| `--dry-run` | 只列清单不下载 |
+| `--verify-only` | 只校验已有文件 |
+| `--force` | 字节数正确也重下 |
+| `--no-hash` | 跳过 sha256（27 GB 哈希在机械盘上要十几分钟） |
+| `--endpoint https://hf-mirror.com` | 换镜像源 |
+| `--out <目录>` | 换下载目标目录 |
+| `--rounds N` / `--sleep S` | 手动指定轮数与轮间等待 |
+| `--no-reexec` | 不要自动切换到 conda 解释器 |
 
 ## 4. 中断、续传与校验
 
@@ -130,12 +164,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File lab\scripts\download_all.ps1
 **只校验不下载**：
 
 ```powershell
-& "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" lab\scripts\download_datasets.py --tier all --verify-only
+& "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" lab\scripts\download_datasets.py --verify-only
 ```
 
 **怀疑某个文件坏了**：删掉它重跑，或者用 `--force` 强制重下全部。字节数不对的文件下载器会自动识别为"部分"并重新获取，这一点已经实测验证过。
 
-**跳过哈希计算**：27 GB 算 sha256 在机械盘上要十几分钟。急着用可以加 `-NoHash`，字节数校验仍然做。
+**跳过哈希计算**：27 GB 算 sha256 在机械盘上要十几分钟。急着用可以加 `--no-hash`，字节数校验仍然做。
 
 ## 5. 下完之后怎么接进训练
 
@@ -190,11 +224,11 @@ ln -s "<周目录绝对路径>/datasets/minimind_dataset" "$MINIMIND_ROOT/datase
 
 | 症状 | 先查什么 | 怎么办 |
 | --- | --- | --- |
-| 开跑就报空间不足并退出 | 日志里的"目标盘可用" | 换 `-Out` 到别的盘，或先 `-Tier mini` |
-| 连接超时、`ConnectionError` | 能不能访问 huggingface.co | 加 `-Endpoint https://hf-mirror.com` |
+| 开跑就报空间不足并退出 | 日志里的"目标盘可用" | 换 `--out` 到别的盘，或先 `--tier mini` |
+| 连接超时、`ConnectionError` | 能不能访问 huggingface.co | 加 `--endpoint https://hf-mirror.com` |
 | 某文件反复"字节数不符" | 是不是被代理或防火墙插了错误页 | 删掉该文件重跑；换端点；查代理设置 |
-| `ModuleNotFoundError: huggingface_hub` | 用的是哪个 python | 用 `-Python` 指定 conda 环境的解释器 |
-| 大文件下到一半停住不动 | 日志最后一行的时间戳 | Ctrl-C 后重跑，续传会接上；网络实在差就先 `-Tier mini` |
+| `ModuleNotFoundError: huggingface_hub` | 用的是哪个 python | 用绝对路径调 `ResearchAgentPy310` 的 python.exe；脚本也会自动切换 |
+| 大文件下到一半停住不动 | 日志最后一行的时间戳 | Ctrl-C 后重跑，续传会接上；网络实在差就先 `--tier mini` |
 | 下完了但训练脚本说找不到数据 | 传的路径对不对 | 回第 5 节，两种接法选一种 |
 | 磁盘满了导致中途失败 | 剩余空间 | 清空间后重跑；只 `mini` 层的话 3.06 GB 就够 |
 
@@ -209,11 +243,13 @@ ln -s "<周目录绝对路径>/datasets/minimind_dataset" "$MINIMIND_ROOT/datase
 | 真实下载 8 个小文件（最大 22 KB） | 全部成功，字节数校验通过，哈希与清单正常写出 |
 | 重跑同一命令 | 全部识别为"已就绪"并跳过，退出码 0 |
 | 人为破坏一个文件后重跑 | 识别为"部分"，只重下那一个，恢复正常 |
-| `download_all.sh` 语法与预演 | 通过 |
-| `download_all.ps1` 语法与预演 | 通过 |
+| 解释器自动切换 | 用 `torchdiff` 环境启动，脚本自行切到 `ResearchAgentPy310` |
+| **真实下载奖励模型全层（3.17 GB，含两个 GB 级文件）** | 11/11 成功，字节数全部校验通过，均速约 18 MB/s，全程无中断 |
 | 直连 huggingface.co | 可达，API 响应 0.4 秒 |
 
-**未验证**：完整 27 GB 的端到端下载没跑过（那正是今晚要做的事）；`hf-mirror.com` 镜像端点没实测；大文件在长时间连接下的断点续传行为没验证过，但它依赖 `huggingface_hub` 自身的续传机制，加上本脚本的重试外壳。
+**未验证**：完整 27 GB 的端到端下载没跑过（那正是今晚要做的事）；`hf-mirror.com` 镜像端点没实测；真实断网重连的续传没构造过，它依赖 `huggingface_hub` 自身的 blob 续传，加上本脚本的重试与重扫外壳。
+
+**一次已修复的真实故障（2026-09-05）**：首版用 PowerShell 包一层做重试循环，里面对原生命令用了 `2>&1`。Windows PowerShell 5.1 会把原生命令的每一行标准错误包装成 `ErrorRecord`，脚本开头的 `$ErrorActionPreference = "Stop"` 于是被 `huggingface_hub` 一条无害的"建议安装 hf_xet"提示触发，整个下载在第 10 个文件处终止。现在重试、循环、日志、编码、磁盘检查全部在 Python 内部完成，不依赖任何 shell 语义；两个 shell 封装已删除。教训写进了 `CLAUDE.md` 第 3.2 节。
 
 所有体积数字来自官方 API，不是估算。
 

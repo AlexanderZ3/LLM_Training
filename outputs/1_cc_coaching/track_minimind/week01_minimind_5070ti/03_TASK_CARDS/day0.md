@@ -34,6 +34,7 @@ export MINIMIND_ROOT=$HOME/minimind
 
 - 预期：打印 `[setup] MiniMind at 7a6fddd63a30c06b2fdd5fac4089922b29bc841b`，随后每个数据文件一行 `sha256=<64 hex> size=<bytes>`，并写出 `<clone-dir>/dataset/SHA256SUMS.txt`。4 个 jsonl 合计约 3 GB，耗时 `估算` 10–40 分钟，取决于带宽。
 - 带宽或磁盘不够时先做：加 `-SkipData`（bash 用 `--skip-data`）只拉代码，约 1 分钟；本卡其余步骤全部照常，数据留到 Day 2 之前补。
+- **想一次把全部数据集和奖励模型下齐**（27.00 GB，适合整夜挂着）：改用 `lab\scripts\download_datasets.py --overnight`（或双击周目录下的 `下载数据集.bat`），用法、层级、续传与校验见 [`06_DATASET_DOWNLOAD.md`](../06_DATASET_DOWNLOAD.md)。它与 `setup_minimind` 不冲突：前者管代码与 commit，后者管数据；两边都按精确字节数校验。
 - 不对时先查：`git -C D:\work\minimind rev-parse HEAD` 的输出是否逐字等于 `7a6fddd63a30c06b2fdd5fac4089922b29bc841b`。不等时脚本会抛错退出，说明 checkout 没落到锁定 commit。
 
 ### 2. 跑探针拿 `probe.json`（10 分钟）· `可直接执行`

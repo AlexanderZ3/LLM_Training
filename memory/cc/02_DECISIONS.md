@@ -49,6 +49,13 @@
 - M02 的所有命令显式 `--dtype float16`；`train_grpo.py` 用 autocast 但没有 GradScaler，已在 lab 中补齐。
 - M02 代码只用 torch 2.1 存在的接口，禁用 `fully_shard`、`DTensor`、`device_mesh`、`torch.accelerator`。
 
+## 2026-09-05 — 下载器默认只下数据集，模型权重是显式选项
+
+- 用户指出下载里混进了 `.safetensors`。那是 InternLM2 1.8B 奖励模型权重，属于**模型不是数据集**，是 cc 把默认层级定得过宽。
+- `download_datasets.py` 的 `--tier` 默认从 `all` 改为 `full`（只下 11 个 jsonl，23.62 GB）；权重要显式 `--tier reward` 或 `--tier all`。
+- 依据：Week M01 Day 5 默认走 `mm_probe/rule_reward.py` 的规则奖励，16 GB 显存同时放策略、参考和 1.8B 奖励模型有溢出风险。不下权重也能完整走完 Day 0–5。
+- 一般规则：给用户下载数据时，模型权重与数据集分开层级，默认不含权重。
+
 ## 2026-09-05 — 参数量以实测为准
 
 - 首版 M02 参数量表漏算 `q_norm`+`k_norm`（每层 192）。以 `sum(p.numel() for p in MiniMindForCausalLM(cfg).parameters())` 实测为准：dense 63,912,192、MoE 198,416,640。

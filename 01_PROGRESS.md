@@ -33,6 +33,45 @@
 
 ## Log
 
+## 2026-09-05 [cc] - 数据下载工具改为纯 Python，并把 conda 规则写进契约
+
+`TYPE: TASK` · `DEPTH: AUTO` · `MODE: REFINE`
+
+### 输入
+
+- 用户报告全量下载在第 10 个文件处报错终止。
+- 用户要求：Python 一律用 conda 环境 `ResearchAgentPy310`，并把这条写进智能体；下载改成 Python 脚本。
+
+### 故障定位
+
+- 红字内容本身无害：`huggingface_hub` 走标准错误流打了一条"建议安装 hf_xet"的提示。
+- 真正的原因在 cc 自己写的 `download_all.ps1`：对原生命令用了 `2>&1`。Windows PowerShell 5.1 会把原生命令的每一行标准错误包装成 `ErrorRecord`，脚本开头的 `$ErrorActionPreference = "Stop"` 因此被这条提示触发，整个 27 GB 下载静默终止。同一逻辑在 bash 下没有问题，属于 PowerShell 特有语义。
+- 附带问题：`Tee-Object` 按控制台代码页写日志，中文全部乱码。
+
+### 动作
+
+- 装 `hf_xet` 与 `hf_transfer` 到 `ResearchAgentPy310`（提示消失，Xet 后端加速大文件）。
+- 重写 `lab/scripts/download_datasets.py`：重试、整轮重扫、`--overnight` 循环、UTF-8 日志、磁盘检查、解释器自检全部移入 Python；入口处 `ensure_conda_interpreter` 用 `os.execv` 强制切到约定环境。
+- 删除 `download_all.ps1` 与 `download_all.sh`；新增周目录下的 `下载数据集.bat`，只负责选对解释器调一次 Python。
+- `CLAUDE.md` 3.1 节改写为强制条款并列出该环境的已装包；新增 3.2 节"长流程用 Python 写，不要用 shell 包一层"，把本次教训固化为规则。
+- `cc-lab-builder` 同步加入同一约束。
+- 重写 `06_DATASET_DOWNLOAD.md` 的第 0、2、3、4、7 节；清理全部过时引用。
+
+### 验证（本机实测）
+
+- 解释器自动切换：用 `torchdiff` 环境启动，脚本自行切到 `ResearchAgentPy310`。
+- 真实下载奖励模型全层 3.17 GB（含两个 GB 级文件）：11/11 成功，字节数全部校验通过，均速约 18 MB/s，全程无中断。
+- 两周结构校验仍 `PASS`，0 error 0 warning；M01 `42 passed`。
+
+### 决策
+
+- 交付给用户的长流程一律纯 Python；shell 最多做"选解释器 + 调一次"。
+- 不对原生命令用 `2>&1`；不在包着原生命令的 PowerShell 脚本里设 `ErrorActionPreference = "Stop"`。
+
+### 下一步
+
+- 用户跑 `download_datasets.py --overnight` 完成 27 GB 全量下载，之后 `/cc-day 01 0`。
+
 ## 2026-09-05 [cc] - MiniMind 两周课程落地（M01 单机 5070 Ti / M02 八卡 V100）
 
 `TYPE: TASK` · `DEPTH: DEEP` · `MODE: BUILD`

@@ -87,7 +87,8 @@
 
 - 5070 Ti 的 PyTorch/驱动组合在探针前是 `未知`；Day 0 出现 `sm_120 not supported` 即为 `BLOCKED`，先装 cu128 wheel 再继续。
 - 16 GB 上 GRPO + 1.8B reward 模型的显存无实测；Day 5 预注册 `INCONCLUSIVE` 出口。
-- 数据文件较大（预训练 mini 约 1.2 GB，SFT mini 约 1.7 GB）；Day 0 只校验 hash，不加载全文件。
+- 数据文件较大（预训练 mini 约 1.2 GB，SFT mini 约 1.7 GB）；Day 0 只校验 hash，不加载全文件。全量数据集加奖励模型共 27.00 GB，整夜下载的完整说明见 [`06_DATASET_DOWNLOAD.md`](06_DATASET_DOWNLOAD.md)。
+- 数据集许可同时标注 `apache-2.0` 与 `cc-by-nc-2.0`（**含非商用条款**），奖励模型许可标注为 `other`；本地学习无碍，公开作品集或商业用途前自行确认边界。
 - 若用户只运行原仓库脚本而没写仪表，当天没有主要产物，证据不计。
 
 ## 来源

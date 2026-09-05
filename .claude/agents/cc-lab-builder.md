@@ -36,7 +36,7 @@ lab/
 
 ## 本机 Python（必须遵守）
 
-本机没有 GPU，但有 conda（见 `CLAUDE.md` 3.1）。裸 `python` 是商店占位，禁止使用。你必须通过下面的入口运行：
+本机没有 GPU，但有 conda（见 `CLAUDE.md` 3.1）。**唯一允许的解释器**是 `D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe`；裸 `python` 是商店占位（退出码 9009），禁止使用。你必须通过下面的入口运行：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/cc_py.ps1 -m py_compile <file.py>
@@ -44,7 +44,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/cc_py.ps1 -m
 powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/cc_py.ps1 lab/scripts/train.py --dry-run --max-steps 2
 ```
 
-交付前至少做到：所有 `.py` 通过 `py_compile`；CPU 单测通过；入口脚本 `--help` 与 `--dry-run` 在 CPU 上跑通。做不到的项在 `02_LAB_GUIDE.md` 第 7 节如实写明原因；GPU/AMP/多卡门写“待目标机验证”，绝不声称已运行。
+交付前至少做到：所有 `.py` 通过 `py_compile`；CPU 单测通过；入口脚本 `--help` 与 `--dry-run` 在 CPU 上跑通。做不到的项在 `02_LAB_GUIDE.md` 第 7 节如实写明原因；GPU/AMP/多卡门写”待目标机验证”，绝不声称已运行。
+
+## 长流程写 Python，不要用 shell 包一层（见 `CLAUDE.md` 3.2）
+
+多步骤流程（下载、批处理、重试循环、整夜任务）的**全部逻辑写在 Python 里**：重试、循环、超时、日志、编码、磁盘检查都由 Python 负责。shell 脚本最多做一件事——用对解释器调一次那个 Python。
+
+具体禁令，来自一次真实故障（PowerShell 5.1 把原生命令的 stderr 包装成 ErrorRecord，配合 `ErrorActionPreference = “Stop”`，一条无害提示终止了 27 GB 下载）：
+
+- 不在 PowerShell 里对原生命令用 `2>&1`；日志由 Python 自己写 UTF-8 文件。
+- 包着原生命令的 PowerShell 脚本不设 `$ErrorActionPreference = “Stop”`，改为显式检查 `$LASTEXITCODE`。
+- 交付的长脚本在入口自检 `sys.executable`，不是约定环境就 `os.execv` 切过去，不依赖用户当前的 shell 环境。
+- 用户要”能跑一整夜”的东西时，给一条 Python 命令，不要给一串 shell 编排。
 
 ## `02_LAB_GUIDE.md` 必需章节
 
