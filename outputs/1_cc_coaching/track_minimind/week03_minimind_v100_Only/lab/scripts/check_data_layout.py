@@ -24,7 +24,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -88,16 +88,35 @@ def group_has_content(gdir: Path) -> bool:
     return False
 
 
+def select_entries(group: Dict[str, Any], tier: str,
+                   used_by: Optional[str]) -> List[Dict[str, Any]]:
+    """按层级 / 按哪一天用得到，挑出这次要校验的文件。
+
+    为什么需要这个：23.83 GiB 的全量数据里，跑完 Day 1–5 只需要 mini 层的
+    4 个文件（2.85 GiB）。内网拷贝很贵，学员合理地只带需要的那部分进去。
+    如果校验脚本一律按 11 个文件报，只带核心数据的人会看到 7 个 MISSING，
+    而那 7 个**本来就不该在那里**——一个把正确状态报成失败的检查，
+    比没有检查更糟，因为它会训练人忽略这个检查。
+    """
+    entries = list(group["files"])
+    if tier != "all":
+        entries = [e for e in entries if e.get("tier", "full") == tier]
+    if used_by:
+        entries = [e for e in entries if used_by in (e.get("used_by") or [])]
+    return entries
+
+
 def check_group(
     group_name: str,
     group: Dict[str, Any],
     root: Path,
     do_sha: bool,
     full_sums: Dict[str, str],
+    entries: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     gdir = root / group_name
-    for entry in group["files"]:
+    for entry in (group["files"] if entries is None else entries):
         rel = entry["path"]
         expected_bytes = int(entry["bytes"])
         p = gdir / rel
@@ -166,6 +185,20 @@ def main(argv: List[str]) -> int:
         action="store_true",
         help="强制检查可选组（例如奖励模型），缺失时算失败",
     )
+    ap.add_argument(
+        "--tier",
+        choices=["mini", "full", "all"],
+        default="all",
+        help="只校验某一层。mini = 跑完 Day 1-5 需要的 4 个文件（2.85 GiB）；"
+             "默认 all = 清单里全部 11 个（23.83 GiB）",
+    )
+    ap.add_argument(
+        "--used-by",
+        type=str,
+        default=None,
+        metavar="TAG",
+        help="只校验某一天用得到的文件，例如 --used-by day1",
+    )
     args = ap.parse_args(argv)
 
     try:
@@ -197,8 +230,12 @@ def main(argv: List[str]) -> int:
     full_sums = load_full_sums(root) if args.sha256 else {}
 
     rows: List[Dict[str, Any]] = []
+    skipped_by_filter = 0
     for name in selected:
-        rows.extend(check_group(name, groups[name], root, args.sha256, full_sums))
+        g = groups[name]
+        entries = select_entries(g, args.tier, args.used_by)
+        skipped_by_filter += len(g["files"]) - len(entries)
+        rows.extend(check_group(name, g, root, args.sha256, full_sums, entries))
 
     bad = [r for r in rows if r["status"] != STATUS_OK]
     ok_count = len(rows) - len(bad)
@@ -223,6 +260,16 @@ def main(argv: List[str]) -> int:
 
     print(f"MM_DATA_ROOT = {root}")
     print(f"检查的组：{', '.join(selected) if selected else '（无）'}")
+    if args.tier != "all" or args.used_by:
+        crit = []
+        if args.tier != "all":
+            crit.append(f"tier={args.tier}")
+        if args.used_by:
+            crit.append(f"used_by={args.used_by}")
+        # 不做静默截断：明确说清这次跳过了多少个，避免「只查了一部分」
+        # 被读成「全部通过」。
+        print(f"筛选：{'，'.join(crit)}（按此跳过 {skipped_by_filter} 个文件，"
+              f"它们不在本次校验范围内）")
     if args.sha256:
         print(f"哈希模式：{'全量（用 SHA256SUMS.txt）' if full_sums else f'前 {SHA_PREFIX_LEN} 位（用清单）'}")
     print("")

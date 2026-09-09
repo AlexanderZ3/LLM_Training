@@ -1,14 +1,14 @@
 # Week M03 · Day 0 — 把 V100 的真实能力、MiniMind 的兼容性、数据路径、torchrun 一次钉死
 
-| 字段 | 值 |
-| --- | --- |
-| 主要产物 | `$MM_RUNS_ROOT/day0_probe/evidence.json`（由 `probe.json` + `compat_audit.md` + `wiring_smoke.json` 聚合而成） |
-| 估时 | `100 分钟`（步骤估时之和） |
-| 环境 | `公司 V100`（步骤 2 在本机 CPU 上做） |
-| AI 辅助等级要求 | `A2`；步骤 5 判断"停在哪一档、为什么" 要求 `A1`（只查官方文档） |
-| 前置 | 无。本周自包含。数据已按 `datasets/README.md` 第 2 节拷到 `$MM_DATA_ROOT` |
-| 本卡对应门 | `静态检查` |
-| 可裁剪项 | 步骤 4（MiniMind 兼容审计）——没有 clone 仓库时它本来就跳过。**步骤 5 wiring smoke 不可裁** |
+| 字段            | 值                                                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 主要产物        | `$MM_RUNS_ROOT/day0_probe/evidence.json`（由 `probe.json` + `compat_audit.md` + `wiring_smoke.json` 聚合而成） |
+| 估时            | `100 分钟`（步骤估时之和）                                                                                           |
+| 环境            | `公司 V100`（步骤 2 在本机 CPU 上做）                                                                                |
+| AI 辅助等级要求 | `A2`；步骤 5 判断"停在哪一档、为什么" 要求 `A1`（只查官方文档）                                                    |
+| 前置            | 无。本周自包含。数据已按`datasets/README.md` 第 2 节拷到 `$MM_DATA_ROOT`                                           |
+| 本卡对应门      | `静态检查`                                                                                                           |
+| 可裁剪项        | 步骤 4（MiniMind 兼容审计）——没有 clone 仓库时它本来就跳过。**步骤 5 wiring smoke 不可裁**                     |
 
 所有命令在周包根目录 `week03_minimind_v100_Only/` 下执行。
 
