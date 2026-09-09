@@ -1,0 +1,105 @@
+{
+  "_comment": [
+    "Q1-Q6 在公司 8xV100（sm70, torch 2.1）上的档。相对 CPU 冒烟档的三处改动：",
+    "1. device=cuda；2. q4/q5 的 compute_dtype/amp 切到 float16（V100 上唯一可用的低精度）；",
+    "3. 规模放大到有统计意义。单次运行仍控制在 10 分钟内（周卡第 8 节的硬约束）。",
+    "**跑之前先跑 probe_int8_caps.py**：fake_quant.on_cuda 不是 ok 时，q5 要退回 CPU 并在证据里写明。",
+    "真结论必须配 --state-dict：合成权重的 outlier 结构是人造的，得不出关于 MiniMind 的任何结论。"
+  ],
+  "tag": "quant_v100",
+  "device": "cuda",
+  "seed": 0,
+  "experiments": ["q1", "q2", "q3", "q4", "q5", "q6"],
+
+  "synthetic_weights": {
+    "layers": [
+      {
+        "name": "synthetic.q_proj.weight",
+        "out_features": 768,
+        "in_features": 768,
+        "channel_scale_decades": 2.0,
+        "outliers_per_row": 8,
+        "outlier_magnitude": 20.0
+      },
+      {
+        "name": "synthetic.gate_proj.weight",
+        "out_features": 2048,
+        "in_features": 768,
+        "channel_scale_decades": 1.5,
+        "outliers_per_row": 12,
+        "outlier_magnitude": 15.0
+      },
+      {
+        "name": "synthetic.down_proj.weight",
+        "out_features": 768,
+        "in_features": 2048,
+        "channel_scale_decades": 1.0,
+        "outliers_per_row": 16,
+        "outlier_magnitude": 10.0
+      }
+    ]
+  },
+
+  "q1": {
+    "granularities": ["per_tensor", "per_channel", "per_group"],
+    "scheme": "symmetric",
+    "axis": 0,
+    "group_size": 128,
+    "num_bits": 8
+  },
+
+  "q2": {
+    "granularity": "per_channel",
+    "axis": 0,
+    "group_size": 128,
+    "num_bits_list": [8, 6, 4],
+    "alphas": [1.0, 0.98, 0.95, 0.92, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.5, 0.4, 0.3]
+  },
+
+  "q3": {
+    "block_size": 2048,
+    "sq_power": 4.0,
+    "steps": 100,
+    "dim": 256,
+    "state_decades": 9.0,
+    "state_blocks": 8,
+    "byte_probe_rows": 4096,
+    "byte_probe_cols": 768
+  },
+
+  "q4": {
+    "model": {"in_features": 768, "hidden_features": 2048, "out_features": 768},
+    "batch": 8,
+    "seq": 128,
+    "compute_dtype": "float16",
+    "variants": [
+      {"granularity": "per_tensor"},
+      {"granularity": "per_channel"},
+      {"granularity": "per_group", "group_size": 128},
+      {"granularity": "per_group", "group_size": 64}
+    ]
+  },
+
+  "q5": {
+    "backend": "ste",
+    "axis": 0,
+    "model": {"in_features": 768, "hidden_features": 2048, "out_features": 768},
+    "batch": 32,
+    "n_batches": 8,
+    "steps": 50,
+    "lr": 0.0005,
+    "amp": true,
+    "_amp_note": "autocast(float16) + GradScaler。V100 上不能用 bfloat16，会直接 RuntimeError"
+  },
+
+  "q6": {
+    "n_tokens": 1024,
+    "channels": 768,
+    "out_features": 768,
+    "n_outlier_channels": 12,
+    "outlier_magnitude": 30.0,
+    "n_batches": 5,
+    "sigma_mult": 6.0,
+    "alphas": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  }
+}

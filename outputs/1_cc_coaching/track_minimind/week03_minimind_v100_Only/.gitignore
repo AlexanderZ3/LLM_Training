@@ -1,0 +1,29 @@
+# 这个周包只入库文档、代码和路径合同。数据、权重、运行产物一律不入库。
+#
+# 为什么显式写：datasets/ 下的路径合同要求文件名与 V100 上逐字一致，
+# 如果哪天有人把真数据拷到这里做本地试验，没有这份 .gitignore 就会试图提交 27 GB。
+# 更要紧的是 runs/ ——那里装的是公司运行产物，误提交等于把公司数据带出公司。
+
+# 数据本体（保留 README / 清单 / .gitkeep）
+datasets/**
+!datasets/**/
+!datasets/README.md
+!datasets/DATA_MANIFEST.json
+!datasets/**/.gitkeep
+!datasets/SHA256SUMS.txt
+
+# 权重本体
+weights/**
+!weights/**/
+!weights/README.md
+!weights/**/.gitkeep
+
+# 运行产物：公司资产，永不入库
+runs/**
+!runs/README.md
+!runs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/

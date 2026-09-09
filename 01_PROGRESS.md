@@ -33,6 +33,54 @@
 
 ## Log
 
+## 2026-09-08 [cc] - Week M03 纯 V100 周包：两步走计划作废，量化/RL 扩展，路径合同
+
+`TYPE: TASK` · `DEPTH: AUTO` · `MODE: COACH（实质是 BUILD，按 /cc-build-week 流水线处理）`
+
+### 输入
+
+用户 2026-09-08 输入（`AGENT` 字段留空，但需求直指 `outputs/1_cc_coaching/track_minimind/`，且用户当次明确要求 cc 处理）：五个训练环境不再可用、只剩公司内网 8×V100；数据已自行下好、要求生成与服务器逐字对应的路径名；作废 week01/week02 的两步走计划、出一个纯 V100 的 week03；扩展 8-bit 量化/QAT 与 RL 后训练；提醒内网环境配置注意事项。
+
+### 动作
+
+- **修正契约中已失效的机器事实**：`CLAUDE.md` 3.1 从 `ResearchAgentPy310`（`D:\Software\Large\Anconda`）改为用户指定的 conda 环境 `rfm`（`C:\Users\zzz_7893\miniconda3\envs\rfm`）——旧路径、旧盘符、旧用户名在当前机器上均不存在。同步删掉 5070 Ti 与 H100 的执行路径，并把"交付是开环的"写进第 2、7 节。
+- 派 4 类子智能体共 7 次：来源审计（量化/RL/内网三块联网核验）、课程规划、理论导师、实验构建 ×2（主线 / 扩展模块）、任务卡、考官、Lab Guide。
+- 主会话自建路径合同（`datasets/` + `weights/` + `runs/` 三份 README、22 文件清单、`paths.py`、两个校验脚本）与三份扩展文档。
+- 修 `.claude/schemas/evidence.schema.json` 的 `oral_scores.id` 正则（`^W\d{2}-` → `^[WM]\d{2}-`）：MiniMind 轨道用 `M` 前缀，原正则会让学员提交的口试成绩校验失败。
+- 修根 `.gitignore`：原 `outputs/**/datasets/` 排除整个目录，导致路径合同文件无法入库（git 不能把被排除目录里的文件加回来）。改成排除目录内容并放行 README/清单/`.gitkeep`，数据本体照旧全部排除。
+
+### 输出
+
+- `outputs/1_cc_coaching/track_minimind/week03_minimind_v100_Only/`：周卡、Foundations（约 1200 行）、Lab Guide、6 张任务卡、口试 27 题 + 27 答、量化模块（Q1–Q6）、RL 模块（R1–R6）、内网配置、路径合同、`lab/`（`mm_v100` + `mm_quant` + `mm_rl`，29 个测试文件）。
+- 校验：`validate_cc_week.ps1 -Week 03 -Track track_minimind -IdPrefix M` → **`PASS`（0 error 0 warning）**；`pytest lab/tests -q` → **`368 passed, 6 skipped`**；`compileall` 退出码 0。6 个跳过全部是 `skipif(not torch.cuda.is_available())`。
+- `00_TRACK_README.md` 改为以 M03 为当前周，M01/M02 标注已作废。
+- `memory/cc/00_PROFILE.md`、`01_STATE.md` 更新。
+
+### 决策
+
+- **量化模块的定位按硬件事实收紧**：V100 没有 INT8 Tensor Core（IMMA 从 sm75 起），`LLM.int8()` 需 CC 7.5、`torch.ao` 的真 INT8 后端只有 CPU、`torchao` 最低 torch 2.5——所以"提速"类实验一律不做。但审计也纠正了一个更悲观的假设：**8-bit 优化器与 NF4/QLoRA 只需 CC 6.0，V100 可用**，fake-quant 在 CUDA 上有原生前反向 kernel。模块因此定位为"误差预算 + 内存带宽"，两者结论可迁移到 A100/H100。
+- **RL 模块不装 vLLM / verl / OpenRLHF**：三者都把推理引擎当硬依赖，而 vLLM 每版硬钉一个精确 torch 版本（连 0.2.7 都要 `torch==2.1.2`）且最低 CC 7.5。走 `trl` + transformers 原生 generate（`use_vllm=False` 是官方默认）。
+- **两个扩展模块合计 17 小时，超过主线本身**，因此本周只交付规格 + 可运行代码 + CPU 单测，实验执行排在 Gate 之后。
+- 数据不下载，只生成路径名与字节清单；`runs/` 明确标注为公司资产、不出公司。
+
+### 构建期发现并修复的缺陷
+
+单测全绿但交付物是坏的，五处，都在"模块之外"：
+
+1. `model.py` 的 `intermediate_size` 用 Llama 的 8/3 规则（2048），注释却写着"MiniMind 的取整规则"——**注释断言了错误的出处**。MiniMind 实际是 `ceil(hidden*pi/64)*64` = 2432，且模型漏了 QK-norm。合计让参数量差 7,079,424（56.8M vs 63.9M），而 Gate 的闭卷手算题正是考这个数。已修，`model.py` / 4 个 config / 相关断言全部对齐 63,912,192。
+2. `run_day.py` 用合成模块名加载兄弟脚本，`mp.spawn` 子进程 import 不到 → Day 2 / Day 3 入口 `PicklingError` 崩溃。**不是 Windows 特有，V100 上同样命中。** 已改为真实可导入的模块名 + 注册 `sys.modules`，两天均实跑通过。
+3. `bounded_train` 强制放大 `num_samples`，使 `CLAUDE.md` 第 7 节规定的 **128 样本 overfit 门无法执行**。已加 `--allow-sample-reuse`。
+4. Day 0 的 wiring smoke 默认走 `spawn`，而 Day 0 的门恰恰是"torchrun 能不能起来"。已改默认 `torchrun`。
+5. Day 1 验 `sft` 链但 run tag 是 `day1_pretrain`；`run_day1_numeric.sh` 用 micro=64，单卡同放 fp32+fp16 两份模型估算约 16 GB。已分别改为 `pretrain` 与 `v100_768_accum`。
+
+另外两条由子智能体实测推翻的文档结论已回写：per-block **线性** 8-bit 量化优化器状态仍发散（须用幂律映射）；截断阈值调优在 8-bit 上无收益（α*=1.0），收益在 4/3-bit 才出现。
+
+### 下一步
+
+- `/cc-day 03 0`。Day 0 步骤 5 的 wiring smoke（`world_size` 1 → 2 → 8）**不可裁**——cc 无 GPU，`torchrun` 从未在本机跑起来过，这是全周唯一的早期闸门。
+- 待用户确认（不阻塞）：每周可投入小时数（满配 12.3 h / 降级 9.6 h，默认降级）；数据集 `cc-by-nc-2.0` 非商用条款放到公司机器上的边界。
+
+
 ## 2026-09-05 [cc] - 数据下载工具改为纯 Python，并把 conda 规则写进契约
 
 `TYPE: TASK` · `DEPTH: AUTO` · `MODE: REFINE`

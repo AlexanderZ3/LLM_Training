@@ -1,0 +1,2 @@
+MiniMind 仓库 model/ 目录的内容拷到这里（tokenizer.json / tokenizer_config.json / vocab 等）。
+也可以直接让 MINIMIND_ROOT 指向克隆仓库，paths.py 会自动回退到那里。

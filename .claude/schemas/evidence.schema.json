@@ -44,7 +44,7 @@
         "type": "object",
         "required": ["id", "score"],
         "properties": {
-          "id": { "type": "string", "pattern": "^W\\d{2}-[READPT]-\\d{2}$" },
+          "id": { "type": "string", "pattern": "^[WM]\\d{2}-[READPT]-\\d{2}$" },
           "score": { "type": "integer", "minimum": 0, "maximum": 4 },
           "retry_score": { "type": "integer", "minimum": 0, "maximum": 4 },
           "note": { "type": "string" }

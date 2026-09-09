@@ -3,16 +3,16 @@
   Run Python through the project's conda environment (never the Windows Store shim).
 .DESCRIPTION
   Forwards all arguments to <conda root>\envs\<env>\python.exe.
-  Environment selection: $env:CC_CONDA_ENV (default "ResearchAgentPy310"). Conda root: $env:CC_CONDA_ROOT
-  (default "D:\Software\Large\Anconda"). Use "base" to run the root interpreter.
+  Environment selection: $env:CC_CONDA_ENV (default "rfm"). Conda root: $env:CC_CONDA_ROOT
+  (default "C:\Users\zzz_7893\miniconda3"). Use "base" to run the root interpreter.
 .EXAMPLE
   powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/cc_py.ps1 -m pytest lab/tests -q
-  $env:CC_CONDA_ENV="parttime"; powershell -File .claude/scripts/cc_py.ps1 -c "import torch; print(torch.__version__)"
+  $env:CC_CONDA_ENV="work"; powershell -File .claude/scripts/cc_py.ps1 -c "import torch; print(torch.__version__)"
 #>
 $root = $env:CC_CONDA_ROOT
-if ([string]::IsNullOrEmpty($root)) { $root = "D:\Software\Large\Anconda" }
+if ([string]::IsNullOrEmpty($root)) { $root = "C:\Users\zzz_7893\miniconda3" }
 $envName = $env:CC_CONDA_ENV
-if ([string]::IsNullOrEmpty($envName)) { $envName = "ResearchAgentPy310" }
+if ([string]::IsNullOrEmpty($envName)) { $envName = "rfm" }
 
 if ($envName -eq "base") { $py = Join-Path $root "python.exe" }
 else { $py = Join-Path (Join-Path $root "envs") (Join-Path $envName "python.exe") }

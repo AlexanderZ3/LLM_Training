@@ -1,0 +1,86 @@
+{
+  "_comment": [
+    "R1-R6 的 CPU 冒烟档。几秒内跑完，用于验证代码路径与不变量。",
+    "本档的数字**不是结论**：TinyCausalLM 不是 MiniMind，CPU 的 fp16 是软件模拟，",
+    "GradScaler 在没有 CUDA 时恒为 enabled=False（scale=1，永不跳步）。",
+    "真结论用 rl_v100.json，在 8xV100 上跑。"
+  ],
+  "tag": "rl_smoke",
+  "device": "cpu",
+  "seed": 0,
+  "experiments": ["r1", "r2", "r3", "r4", "r5", "r6"],
+
+  "model": {
+    "vocab_size": 256,
+    "hidden_size": 64,
+    "num_layers": 2,
+    "num_heads": 4,
+    "num_kv_heads": 2,
+    "intermediate_size": 128,
+    "max_seq_len": 64,
+    "tie_embeddings": true
+  },
+
+  "r1": {
+    "batch": 4,
+    "seq": 16,
+    "prompt_len": 4,
+    "clip_eps": 0.2,
+    "path_mismatch_scale": 1.05,
+    "_note": "path_mismatch_scale 模拟 old_logp 来自另一个模型版本；1.05 的偏差远超 fp16 精度界"
+  },
+
+  "r2": {
+    "batch": 4,
+    "seq": 16,
+    "prompt_len": 4,
+    "logratio_sigmas": [0.002, 0.02, 0.2],
+    "_note": "sigma 就是 policy 相对 ref 漂移的量级。0.002 是刚开始训练，0.2 是已经跑远了"
+  },
+
+  "r3": {
+    "dim": 16,
+    "batch": 8,
+    "accum_steps": 4,
+    "max_grad_norm": 1.0,
+    "amp": false,
+    "_amp_note": "amp 只在 --device cuda 时生效"
+  },
+
+  "r4": {
+    "n_groups": 64,
+    "group_size": 8,
+    "eps": 0.0001,
+    "cases": [
+      {"base": 0.0, "spread": 0.001},
+      {"base": 1.0, "spread": 0.001},
+      {"base": 1.0, "spread": 0.0001},
+      {"base": 4.0, "spread": 0.01}
+    ],
+    "_note": "base=0 的那一档是对照组：同样的 spread，去掉偏置就没有问题"
+  },
+
+  "r5": {
+    "batch": 4,
+    "seq": 16,
+    "prompt_len": 4,
+    "granularity": "per_channel",
+    "group_size": 128,
+    "compute_dtype": "float32",
+    "_compute_dtype_note": "CPU 上用 float32 隔离量化误差；V100 上改成 float16 才是真实配置",
+    "skip_name_contains": ["lm_head"],
+    "policy_drift": 0.01,
+    "beta": 0.04
+  },
+
+  "r6": {
+    "batch": 4,
+    "seq": 16,
+    "prompt_len": 4,
+    "target_suffixes": ["q_proj", "v_proj"],
+    "r": 8,
+    "alpha": 16,
+    "dropout": 0.0,
+    "break_std": 0.02
+  }
+}

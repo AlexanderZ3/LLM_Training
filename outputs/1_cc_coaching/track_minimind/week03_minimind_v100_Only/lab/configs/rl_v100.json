@@ -1,0 +1,86 @@
+{
+  "_comment": [
+    "R1-R6 在公司 8xV100（sm70, torch 2.1）上的档。相对 CPU 冒烟档的三处改动：",
+    "1. device=cuda；2. r3.amp=true（autocast(float16)+GradScaler，V100 上不能用 bfloat16）；",
+    "3. r5.compute_dtype=float16（真实配置：量化误差与 fp16 计算误差叠加）。",
+    "模型仍是 TinyCausalLM——它只验路径与不变量。要在真 MiniMind 上出结论，",
+    "把 build_model 换成 MiniMind 的加载路径，这一步归 Day 5 的卡管，不在本套件里。",
+    "单次运行控制在 10 分钟内（周卡第 8 节的硬约束）。"
+  ],
+  "tag": "rl_v100",
+  "device": "cuda",
+  "seed": 0,
+  "experiments": ["r1", "r2", "r3", "r4", "r5", "r6"],
+
+  "model": {
+    "vocab_size": 6400,
+    "hidden_size": 512,
+    "num_layers": 8,
+    "num_heads": 8,
+    "num_kv_heads": 2,
+    "intermediate_size": 1664,
+    "max_seq_len": 512,
+    "tie_embeddings": true,
+    "_note": "形状对齐 MiniMind 26M 档（hidden 512 / 8 层 / GQA 8:2 / vocab 6400），但权重是随机初始化"
+  },
+
+  "r1": {
+    "batch": 8,
+    "seq": 256,
+    "prompt_len": 64,
+    "clip_eps": 0.2,
+    "path_mismatch_scale": 1.05
+  },
+
+  "r2": {
+    "batch": 8,
+    "seq": 256,
+    "prompt_len": 64,
+    "logratio_sigmas": [0.0005, 0.002, 0.02, 0.2]
+  },
+
+  "r3": {
+    "dim": 512,
+    "batch": 32,
+    "accum_steps": 8,
+    "max_grad_norm": 1.0,
+    "amp": true,
+    "_amp_note": "这一档才验得到 GradScaler 的真实动态：init_scale 65536、遇 inf backoff 0.5、growth_interval 2000"
+  },
+
+  "r4": {
+    "n_groups": 256,
+    "group_size": 8,
+    "eps": 0.0001,
+    "cases": [
+      {"base": 0.0, "spread": 0.001},
+      {"base": 1.0, "spread": 0.01},
+      {"base": 1.0, "spread": 0.001},
+      {"base": 1.0, "spread": 0.0001},
+      {"base": 3.0, "spread": 0.001}
+    ]
+  },
+
+  "r5": {
+    "batch": 4,
+    "seq": 256,
+    "prompt_len": 64,
+    "granularity": "per_channel",
+    "group_size": 128,
+    "compute_dtype": "float16",
+    "skip_name_contains": ["lm_head"],
+    "policy_drift": 0.01,
+    "beta": 0.04
+  },
+
+  "r6": {
+    "batch": 4,
+    "seq": 256,
+    "prompt_len": 64,
+    "target_suffixes": ["q_proj", "v_proj"],
+    "r": 8,
+    "alpha": 16,
+    "dropout": 0.0,
+    "break_std": 0.02
+  }
+}

@@ -9,7 +9,16 @@ outputs/**/lab/runs/
 outputs/**/lab/**/dataset/
 
 # 下载的数据集与模型权重（27 GB，不入版本控制）
-outputs/**/datasets/
+# 改成排除目录内容而不是排除目录本身：git 无法把被排除目录里的文件再加回来，
+# 而 week03 的路径合同（README / DATA_MANIFEST.json / .gitkeep）必须入库——
+# 它们只含文件名和字节数，不含任何样本内容。数据本体照旧全部排除。
+outputs/**/datasets/**
+!outputs/**/datasets/**/
+!outputs/**/datasets/README.md
+!outputs/**/datasets/DATA_MANIFEST.json
+!outputs/**/datasets/SHA256SUMS.txt
+!outputs/**/datasets/download.log
+!outputs/**/datasets/**/.gitkeep
 *.pth
 *.pt
 *.safetensors

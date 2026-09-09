@@ -1,0 +1,55 @@
+# Week M03 lab 依赖 —— 本周的设计目标之一就是「一个新包都不装」。
+#
+# 为什么零新依赖
+# --------------
+# 公司内网 pip install 可用但有依赖的包容易失败（用户 2026-09-08 确认）。
+# 一次装不上的 bitsandbytes 会把当天的排队时间全部吃掉，而本周所有内容
+# 都可以用纯 PyTorch 写出来。所以下面这张表里没有一行是「需要新装」的。
+#
+# 明确不使用（写在这里是为了让 review 时一眼能看出边界）：
+#   bitsandbytes / deepspeed / trl / peft / vllm / flash-attn /
+#   megablocks / DeepEP / apex / wandb
+# 量化与 RL 两个扩展模块同样零新依赖，全部用纯 PyTorch 自己实现。
+
+# ---------------------------------------------------------------------------
+# 公司 8xV100（唯一执行环境）——不新建 conda 环境，不升级 torch
+# ---------------------------------------------------------------------------
+# 已有环境应满足：
+#   torch == 2.1.0        （已装；本 lab 只调用 2.1 已存在的 API）
+#   numpy >= 1.21, < 3    （torch 2.1 的既有依赖）
+#
+# 只在跑 MiniMind 原脚本或用真 tokenizer 时才需要（本 lab 主线不依赖）：
+#   transformers          （版本未知，Day 0 探针会读出来）
+#   datasets              （MiniMind 的 lm_dataset.py 需要）
+#
+# 本 lab 主线用内置的 SimpleTokenizer 与自带模型，所以上面两个缺了也能跑完
+# Day 0-5 的全部门。这是刻意的：内网装包失败不该阻塞整周。
+
+torch>=2.1.0
+numpy>=1.21
+
+# ---------------------------------------------------------------------------
+# 本机（Windows，conda 环境 rfm，无 GPU）——写代码与 CPU 单测
+# ---------------------------------------------------------------------------
+# 实测环境（2026-09-08，已确认）：
+#   Python  3.11.16
+#   torch   2.14.0+cpu
+#   numpy   2.4.6
+#   pytest  9.1.1
+#
+# 跑单测需要（V100 上不需要）：
+pytest>=7.0
+
+# ---------------------------------------------------------------------------
+# 两条路径的差异，以及代码怎么同时活在两边
+# ---------------------------------------------------------------------------
+# 1) GradScaler：torch 2.1 只有 torch.cuda.amp.GradScaler（且只服务 CUDA）；
+#    2.3+ 才有 torch.amp.GradScaler(device_type)。
+#    common.py 的 new_torch_scaler() 两个都试，CPU 一律走自带的 PurePythonScaler。
+# 2) torch.distributed.checkpoint：2.1 的公开入口是 save_state_dict /
+#    load_state_dict，2.2+ 改推 save / load。ckpt_reshard.py 两个都试。
+# 3) SDPA 后端选择：2.1 用 torch.backends.cuda.sdp_kernel；2.3+ 是
+#    torch.nn.attention.sdpa_kernel。common.py 的 sdpa_context() 只用 2.1 的那个，
+#    检测不到时降级为 auto 并打一行警告。
+# 4) bfloat16：V100(sm70) 不支持。assert_dtype_supported() 在参数解析阶段就拒绝，
+#    不等到 autocast 里报错。

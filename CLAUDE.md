@@ -39,7 +39,7 @@ cc 与 Codex 的核心差异在交付单位：**Codex 的交付单位是教程�
 
 - 公司电脑上的数据、代码、模型、日志、trace、checkpoint、图片、拓扑细节和性能数字不得导出。cc 只接收用户获准提供的抽象、不可重识别的文字摘要。
 - 不建议任何绕过公司网络、账户、存储、审计或软件安装政策的方式。
-- 个人 5070 Ti 与租用算力只使用公开或已授权的数据、代码和模型。
+- 任何非公司环境（历史上的个人 5070 Ti、可能的租用算力）只使用公开或已授权的数据、代码和模型。自 2026-09-08 起这类环境实际不可用，本条只在恢复使用时生效。
 - 金融训练内容是工程训练，不构成投资建议；未验证的 PnL 不能作为模型质量或奖励信号。
 - 公司环境不新建虚拟环境、不擅自升级 PyTorch 2.1；先做依赖兼容审计，再给安装建议。
 
@@ -55,25 +55,31 @@ cc 与 Codex 的核心差异在交付单位：**Codex 的交付单位是教程�
 
 会变化的 API、包版本、硬件兼容矩阵、模型仓库必须联网核验官方来源并记录核验日期。公司固定环境与当前文档不同时，同时保留“公司兼容路径”与“当前公开路径”。
 
-已知环境（`用户自述待核验`）：公司 8× V100，既有 Conda + PyTorch 2.1.0；个人 RTX 5070 Ti 16 GB，完整权限；可选租用 4×/8× H100。V100 支持 FP16 Tensor Core，通常无原生 BF16；输入中“V100 不支持 FP16”按 BF16 笔误处理，真实能力以探针为准。
+已知环境（`用户自述待核验`）：公司 8× V100，既有 Conda + PyTorch 2.1.0。V100 支持 FP16 Tensor Core，通常无原生 BF16；输入中“V100 不支持 FP16”按 BF16 笔误处理，真实能力以探针为准。
 
-### 3.1 本机 Python 一律走 conda 环境 `ResearchAgentPy310`（强制）
+**2026-09-08 变更（`已确认`，用户当次输入）**：个人 RTX 5070 Ti **不再可用**，租用 H100 不在当前计划内。唯一的 GPU 执行环境是公司 8×V100，且它是**内网**：`pip install` 与 `git clone` 可用但复杂依赖易失败，**模型权重必须外网下好再拷进去**，服务器只进不出。cc 所在的这台 Windows 机器有外网、无 GPU，只做代码分析与 CPU 静态验证——交付是**开环**的，真实运行证据一律来自 V100。
 
-用户指令（2026-09-04 下达，2026-09-05 再次确认并指定环境）：**本项目在本机用 Python，一律用 conda 环境 `ResearchAgentPy310`。**
+### 3.1 本机 Python 一律走 conda 环境 `rfm`（强制）
+
+用户指令（2026-09-08 下达，覆盖 2026-09-04/05 的旧指令）：**科研类的都使用 conda 环境 `rfm`。以后不要再问。**
 
 ```text
-D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe
+C:\Users\zzz_7893\miniconda3\envs\rfm\python.exe
 ```
 
-本机探针（`已确认`，2026-09-05）：
+本机探针（`已确认`，2026-09-08）：
 
 | 项 | 值 |
 | --- | --- |
-| Anaconda 根目录 | `D:\Software\Large\Anconda`（conda 23.10.0） |
-| **唯一允许的解释器** | `D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe`（Python 3.10.20） |
-| 已装关键包 | torch 2.14.0+cpu、pytest 9.1.1、transformers 4.57.6、numpy 2.2.6、huggingface_hub 0.36.2、hf_xet、hf_transfer |
-| PATH 上的 `python` | Windows 商店占位入口，退出码 9009，**禁止使用** |
+| 项目根目录 | `C:\Users\zzz_7893\Desktop\0_Projects\LLM_Training`（旧记录里的 `D:\zz\00_RealProjects\0_LLM_Training` 已失效） |
+| conda 根目录 | `C:\Users\zzz_7893\miniconda3`（miniconda，`conda` **不在 PATH 上**，只能用绝对路径调解释器） |
+| **唯一允许的解释器** | `C:\Users\zzz_7893\miniconda3\envs\rfm\python.exe`（Python 3.11.16） |
+| 其他环境 | `work`（3.11.16，同样有 pytest/numpy）、`base`（3.14.7，空）；**不要用** |
+| 已装关键包 | pytest 9.1.1、numpy 2.4.6；torch 为 cc 于 2026-09-08 装入的 CPU wheel |
+| PATH 上的 `python` | Windows 商店占位入口，**禁止使用** |
 | GPU | 本机无 NVIDIA GPU，`nvidia-smi` 不存在；只能做 CPU 单测、`py_compile`、dry run |
+
+**旧机器的事实已作废**：`D:\Software\Large\Anconda`、`ResearchAgentPy310`、`D:` 盘、用户名 `13289` 在这台机器上都不存在。任何文档里出现这些路径都是历史记录，不是可执行命令。
 
 执行方式，三选一，都指向同一个解释器：
 
@@ -81,20 +87,18 @@ D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe
 # 1) 统一入口（可用 CC_CONDA_ENV 临时切换环境）
 powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/cc_py.ps1 -m pytest lab/tests -q
 # 2) 直接调用绝对路径
-& "D:\Software\Large\Anconda\envs\ResearchAgentPy310\python.exe" -m py_compile lab/src/pkg/model.py
+& "C:\Users\zzz_7893\miniconda3\envs\rfm\python.exe" -m py_compile lab/src/pkg/model.py
 # 3) 在 conda terminal 里先激活再用
-conda activate ResearchAgentPy310
+conda activate rfm
 python -m pytest lab/tests -q
 ```
 
 规则：
 
 - 所有 agent 与 skill 在本机运行 Python 时**必须**用上述之一；写死裸 `python`/`python3` 视为阻断问题。
-- **交付给用户的脚本要自己保证解释器正确**，不要依赖用户的当前环境。长脚本在入口处检测 `sys.executable`，不是这个环境就 `os.execv` 切过去（范例：`track_minimind/week01_minimind_5070ti/lab/scripts/download_datasets.py` 的 `ensure_conda_interpreter`）。
+- **交付给用户的脚本要自己保证解释器正确**，不要依赖用户的当前环境。长脚本在入口处检测 `sys.executable`，不是这个环境就 `os.execv` 切过去。
 - 需要新包时在该环境内 `pip install`（CPU 版 torch 用 `--index-url https://download.pytorch.org/whl/cpu`），并把版本写进对应周包的 `lab/requirements.txt`；不改动公司环境。
-- 本机结果只代表 CPU 路径；GPU 相关门（AMP、显存、多卡）仍待 5070 Ti 或公司机器。
-- 本机 `C:\Users\13289\AppData\Local\Temp\pytest-of-13289` 权限异常，跑 pytest 要加 `--basetemp=<可写目录>`。
-
+- 本机结果只代表 CPU 路径；GPU 相关门（AMP、显存、多卡）只能在公司 8×V100 上验证。**个人 5070 Ti 自 2026-09-08 起不再可用，不要再把它写进任何执行路径。**
 ### 3.2 长流程用 Python 写，不要用 shell 包一层（2026-09-05 教训）
 
 交付给用户的多步骤流程（下载、批量处理、重试循环）**逻辑全部写在 Python 里**，shell 脚本最多做一件事：用对解释器调用那个 Python。
@@ -158,7 +162,7 @@ python -m pytest lab/tests -q
 → 独立 eval、消融和结论
 ```
 
-前一门失败不得用扩大算力掩盖。H100 租用门：本地/公司路径已通过、预算与时长已写明、问题无法用较小资源回答、停止条件和产物已预注册。
+前一门失败不得用扩大算力掩盖。**自 2026-09-08 起唯一 GPU 环境是公司 8×V100**，上表中需要非 V100 能力的门（原生 BF16、FlashAttention-2、INT8 Tensor Core）改为在 V100 上做等价替代或 fake-quant 模拟，并在周卡里写明替代关系。H100 租用门保留但当前不适用：需本地/公司路径已通过、预算与时长已写明、问题无法用较小资源回答、停止条件和产物已预注册。
 
 ## 8. AI 辅助等级与四维评分
 

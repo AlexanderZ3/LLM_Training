@@ -1,14 +1,14 @@
 # Week M01 · Day 3 — Full SFT 与 mask 错位故障的正常/错位对照
 
-| 字段 | 值 |
-| --- | --- |
-| 主要产物 | 正常（`none`）与错位（`user_in_loss`）两条 loss 曲线的并排对照，加一段写下来的结论：症状 → 检查 → 定位 |
-| 估时 | `120 分钟`（步骤估时之和） |
-| 环境 | `个人 5070 Ti`（步骤 2–5 需要 GPU；步骤 1、6 `CPU 即可`） |
-| AI 辅助等级要求 | `A1`（步骤 6 的结论必须闭卷先写，写完再对 `02_LAB_GUIDE.md` 第 5 节 F5；这是 Gate 第三题的预演） |
-| 前置 | Day 2 的证据：`exported_pth` = `out/pretrain_768.pth` 已生成；Day 1 的证据：`fixture_first_loss_pos = 12` |
-| 本卡对应门 | `有界训练 + 故障注入`（`02_LAB_GUIDE.md` 的门 5c） |
-| 可裁剪项 | 步骤 3 的 `-MaxSteps 300` 可降到 150（对照仍成立，两条曲线步数必须相同）；步骤 2、5、6 不可裁 |
+| 字段            | 值                                                                                                              |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| 主要产物        | 正常（`none`）与错位（`user_in_loss`）两条 loss 曲线的并排对照，加一段写下来的结论：症状 → 检查 → 定位    |
+| 估时            | `120 分钟`（步骤估时之和）                                                                                    |
+| 环境            | `个人 5070 Ti`（步骤 2–5 需要 GPU；步骤 1、6 `CPU 即可`）                                                  |
+| AI 辅助等级要求 | `A1`（步骤 6 的结论必须闭卷先写，写完再对 `02_LAB_GUIDE.md` 第 5 节 F5；这是 Gate 第三题的预演）            |
+| 前置            | Day 2 的证据：`exported_pth` = `out/pretrain_768.pth` 已生成；Day 1 的证据：`fixture_first_loss_pos = 12` |
+| 本卡对应门      | `有界训练 + 故障注入`（`02_LAB_GUIDE.md` 的门 5c）                                                          |
+| 可裁剪项        | 步骤 3 的`-MaxSteps 300` 可降到 150（对照仍成立，两条曲线步数必须相同）；步骤 2、5、6 不可裁                  |
 
 ## 为什么做
 
@@ -28,12 +28,6 @@ $Py = "D:/Software/Large/Anconda/envs/ResearchAgentPy310/python.exe"
 - 不对时先查：命令报未知 mode，核对 `--mode` 只接受 `none` / `assistant_all_ignored` / `user_in_loss` 三个取值（`lab/src/mm_probe/mask_fault.py` 的 `FAULT_MODES`）。
 
 ### 2. 正常 SFT 300 步（35 分钟）· `模板`
-
-```powershell
-$env:MINIMIND_ROOT = "D:\work\minimind"
-$env:MM_PYTHON = "<5070Ti 上的 python.exe>"
-.\lab\scripts\run_sft_bounded.ps1 -MaxSteps 300 -Config sft_5070ti -MaskFault none
-```
 
 - 预期：写到 `lab\runs\sft_sft_5070ti_none\`，产出 `log_sft.jsonl|.csv|.png`、`eval.jsonl`（8 条固定 prompt 的贪心生成），并导出 `$MINIMIND_ROOT\out\full_sft_768.pth`（Day 4 与 Day 5 的输入）。loss 曲线正常下降且有明显抖动，`n_label_tokens` 每步都远小于该步的非 pad token 总数。
 - 没有 GPU 时先做：本机 `& $Py lab\scripts\mmp.py bounded_train --config tiny_cpu --stage sft --max-steps 20 --save-dir lab\runs\tiny_none`，只验证代码路径与日志字段；tiny 配置的曲线形状不能当作对照基线。

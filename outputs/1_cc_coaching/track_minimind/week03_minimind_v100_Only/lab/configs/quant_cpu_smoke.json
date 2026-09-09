@@ -1,0 +1,95 @@
+{
+  "_comment": [
+    "Q1-Q6 的 CPU 冒烟档。目标是几十秒内跑完全部六个实验，用于验证代码路径。",
+    "本档的数字**不是结论**：合成权重不是 MiniMind 权重，CPU 的 fp16 是软件模拟。",
+    "真结论用 quant_v100.json + --state-dict 指向真权重，在 8xV100 上跑。"
+  ],
+  "tag": "quant_smoke",
+  "device": "cpu",
+  "seed": 0,
+  "experiments": ["q1", "q2", "q3", "q4", "q5", "q6"],
+
+  "synthetic_weights": {
+    "_comment": "构造两种结构：逐输出通道的尺度差（per-channel 能救）+ 行内稀疏 outlier（per-group 能救）",
+    "layers": [
+      {
+        "name": "layers.0.self_attn.q_proj.weight",
+        "out_features": 64,
+        "in_features": 512,
+        "channel_scale_decades": 2.0,
+        "outliers_per_row": 4,
+        "outlier_magnitude": 20.0
+      },
+      {
+        "name": "layers.0.mlp.gate_proj.weight",
+        "out_features": 96,
+        "in_features": 384,
+        "channel_scale_decades": 1.0,
+        "outliers_per_row": 6,
+        "outlier_magnitude": 12.0
+      }
+    ]
+  },
+
+  "q1": {
+    "granularities": ["per_tensor", "per_channel", "per_group"],
+    "scheme": "symmetric",
+    "axis": 0,
+    "group_size": 128,
+    "num_bits": 8
+  },
+
+  "q2": {
+    "granularity": "per_channel",
+    "axis": 0,
+    "group_size": 128,
+    "num_bits_list": [8, 4],
+    "alphas": [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.6, 0.5, 0.4, 0.3]
+  },
+
+  "q3": {
+    "block_size": 2048,
+    "sq_power": 4.0,
+    "steps": 40,
+    "dim": 64,
+    "state_decades": 9.0,
+    "state_blocks": 4,
+    "byte_probe_rows": 1024,
+    "byte_probe_cols": 256
+  },
+
+  "q4": {
+    "model": {"in_features": 128, "hidden_features": 256, "out_features": 128},
+    "batch": 4,
+    "seq": 16,
+    "compute_dtype": "float32",
+    "_compute_dtype_note": "CPU 上用 float32 隔离量化误差；V100 上改成 float16 才是真实配置",
+    "variants": [
+      {"granularity": "per_channel"},
+      {"granularity": "per_group", "group_size": 128}
+    ]
+  },
+
+  "q5": {
+    "backend": "ste",
+    "axis": 0,
+    "model": {"in_features": 128, "hidden_features": 192, "out_features": 64},
+    "batch": 16,
+    "n_batches": 4,
+    "steps": 5,
+    "lr": 0.001,
+    "amp": false,
+    "_amp_note": "amp 只在 --device cuda 时生效；CPU 上恒为关"
+  },
+
+  "q6": {
+    "n_tokens": 128,
+    "channels": 128,
+    "out_features": 96,
+    "n_outlier_channels": 4,
+    "outlier_magnitude": 30.0,
+    "n_batches": 3,
+    "sigma_mult": 6.0,
+    "alphas": [0.0, 0.2, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  }
+}

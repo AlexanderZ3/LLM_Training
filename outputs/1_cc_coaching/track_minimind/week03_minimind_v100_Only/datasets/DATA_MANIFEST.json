@@ -1,0 +1,224 @@
+{
+  "manifest_version": 1,
+  "generated": "2026-09-08",
+  "generated_by": "cc",
+  "purpose": "V100 服务器与本仓库之间的数据路径合同。本仓库不存放数据本体，只存放这份清单和目录名。",
+  "size_source": "outputs/1_cc_coaching/track_minimind/week01_minimind_5070ti/datasets/download.log (2026-09-05 实际下载校验通过)",
+  "size_label": "已确认",
+  "sha256_label": "已确认（仅前 16 位十六进制，来自下载日志的截断显示；全量校验需随数据一起拷入 SHA256SUMS.txt）",
+  "roots": {
+    "MM_DATA_ROOT": "本文件所在目录。V100 上用环境变量覆盖，例如 /data/minimind/datasets",
+    "MM_WEIGHTS_ROOT": "../weights，放 tokenizer 与外部基座权重",
+    "MM_RUNS_ROOT": "../runs，放 checkpoint / 日志 / profile；内容留在公司内"
+  },
+  "groups": {
+    "minimind_dataset": {
+      "source_repo": "jingyaogong/minimind_dataset",
+      "source_type": "huggingface dataset",
+      "revision": "312afb4f76391145c6902f765bb51691c09a12f5",
+      "license": "apache-2.0 与 cc-by-nc-2.0（后者为非商用）",
+      "total_bytes": 25587831653,
+      "files": [
+        {
+          "path": "pretrain_t2t_mini.jsonl",
+          "bytes": 1241043656,
+          "sha256_prefix": "6dd6716c84ab3689",
+          "tier": "mini",
+          "fields": [
+            "text"
+          ],
+          "used_by": [
+            "day1",
+            "day2",
+            "day3"
+          ]
+        },
+        {
+          "path": "sft_t2t_mini.jsonl",
+          "bytes": 1739201170,
+          "sha256_prefix": "abb1e76b2056e147",
+          "tier": "mini",
+          "fields": [
+            "conversations"
+          ],
+          "used_by": [
+            "day2",
+            "day3"
+          ]
+        },
+        {
+          "path": "dpo.jsonl",
+          "bytes": 53653322,
+          "sha256_prefix": "ee934a8a455ccc99",
+          "tier": "mini",
+          "fields": [
+            "chosen",
+            "rejected"
+          ],
+          "used_by": [
+            "day4"
+          ]
+        },
+        {
+          "path": "rlaif.jsonl",
+          "bytes": 23754740,
+          "sha256_prefix": "8c6634db971fa34b",
+          "tier": "mini",
+          "fields": [
+            "conversations"
+          ],
+          "used_by": [
+            "day5",
+            "ext_rl"
+          ]
+        },
+        {
+          "path": "pretrain_t2t.jsonl",
+          "bytes": 8275074893,
+          "sha256_prefix": "31efc9a6fa743076",
+          "tier": "full",
+          "fields": [
+            "text"
+          ],
+          "used_by": [
+            "day3"
+          ]
+        },
+        {
+          "path": "sft_t2t.jsonl",
+          "bytes": 14096018369,
+          "sha256_prefix": "b5dab3d590b3b4ae",
+          "tier": "full",
+          "fields": [
+            "conversations"
+          ],
+          "used_by": []
+        },
+        {
+          "path": "agent_rl.jsonl",
+          "bytes": 82036930,
+          "sha256_prefix": "cb96bcc8096aecc5",
+          "tier": "full",
+          "fields": [
+            "conversations"
+          ],
+          "used_by": [
+            "ext_rl"
+          ]
+        },
+        {
+          "path": "agent_rl_math.jsonl",
+          "bytes": 18372683,
+          "sha256_prefix": "5f2f6f8e90d8d5c6",
+          "tier": "full",
+          "fields": [
+            "conversations"
+          ],
+          "used_by": [
+            "ext_rl"
+          ]
+        },
+        {
+          "path": "lora_medical.jsonl",
+          "bytes": 34002385,
+          "sha256_prefix": "abf66d2bf14bf570",
+          "tier": "full",
+          "fields": [
+            "conversations"
+          ],
+          "used_by": [
+            "day4"
+          ]
+        },
+        {
+          "path": "lora_exam.jsonl",
+          "bytes": 24650716,
+          "sha256_prefix": "0e8debd0b1b822a9",
+          "tier": "full",
+          "fields": [
+            "conversations"
+          ],
+          "used_by": []
+        },
+        {
+          "path": "lora_identity.jsonl",
+          "bytes": 22789,
+          "sha256_prefix": "26d4eafb384d2e02",
+          "tier": "full",
+          "fields": [
+            "conversations"
+          ],
+          "used_by": [
+            "day4"
+          ]
+        }
+      ]
+    },
+    "internlm2_1_8b_reward": {
+      "source_repo": "internlm/internlm2-1_8b-reward",
+      "source_type": "huggingface model",
+      "revision": "25f3593492ab4625ce00fce8c5e67802d6e702ca",
+      "license": "other（用前读模型卡）",
+      "total_bytes": 3400795913,
+      "optional": true,
+      "note": "可选。Day 5 默认走规则奖励；这套权重是换成模型打分时的升级路径。加载需要 trust_remote_code=True，三个远程代码文件必须一起拷。",
+      "files": [
+        {
+          "path": "model-00001-of-00002.safetensors",
+          "bytes": 1981392544,
+          "sha256_prefix": "b0cbcdad5899d93d"
+        },
+        {
+          "path": "model-00002-of-00002.safetensors",
+          "bytes": 1417790344,
+          "sha256_prefix": "6421a9ec59b5e7b1"
+        },
+        {
+          "path": "model.safetensors.index.json",
+          "bytes": 13682,
+          "sha256_prefix": "d59589bef9aed264"
+        },
+        {
+          "path": "config.json",
+          "bytes": 813,
+          "sha256_prefix": "a50c39e11d22fb42"
+        },
+        {
+          "path": "configuration_internlm2.py",
+          "bytes": 9042,
+          "sha256_prefix": "8b645f86e6a6bf98"
+        },
+        {
+          "path": "modeling_internlm2.py",
+          "bytes": 91364,
+          "sha256_prefix": "32114decf3b8e21a"
+        },
+        {
+          "path": "tokenization_internlm2.py",
+          "bytes": 8806,
+          "sha256_prefix": "444d4c2b0da158e6"
+        },
+        {
+          "path": "tokenization_internlm2_fast.py",
+          "bytes": 7805,
+          "sha256_prefix": "1fe5f033032afc40"
+        },
+        {
+          "path": "tokenizer.model",
+          "bytes": 1477754,
+          "sha256_prefix": "f868398fc4e05ee1"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 2950,
+          "sha256_prefix": "49e72c79132f88a4"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "bytes": 809,
+          "sha256_prefix": "54252d86e6290c9e"
+        }
+      ]
+    }
+  }
+}
